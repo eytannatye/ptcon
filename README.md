@@ -1,115 +1,115 @@
 # PT Automation Orchestrator
 
-מכלול אוטומציה לבדיקות חדירה שמבצע 14 בדיקות אבטחה על דומיינים ומפיק דוחות HTML/JSON מקיפים.
+Automated penetration testing orchestration tool that performs 14 security checks on target domains and generates comprehensive HTML/JSON reports.
 
-## 📋 תכונות (14 בדיקות)
+## 📋 Features (14 Security Checks)
 
-1. **Headers Check** - בדיקת HTTP headers עם ניתוח CSP, Cookies, ו-Referrer-Policy
-2. **DNS/Network Layer Analysis** - רישומי A, AAAA, MX, TXT (SPF, DMARC, DKIM) עם זיהוי misconfigurations
-3. **Subdomain Discovery** - גילוי subdomains באמצעות subfinder + אימות subdomains חיים
-4. **Nuclei Scan** - סריקת פגיעויות פאסיבית עם תבניות (technologies + misconfiguration)
-5. **Screenshot** - צילום מסך של הדף הראשי באמצעות Playwright עם WAF bypass
-6. **JavaScript Endpoint Extraction** - חילוץ endpoints מ-JavaScript files (LinkFinder או regex fallback)
-7. **Secret Finder** - חיפוש סודות ב-JavaScript files (API keys, tokens, passwords)
-8. **Wayback Machine** - חיפוש URLs היסטוריים דרך CDX API (מוגבל ל-5000 URLs)
-9. **Sucuri SiteCheck** - בדיקת malware/blacklist/בעיות אבטחה דרך API
-10. **Check-Host.net** - בדיקת זמינות host ובדיקות רשת עם screenshot
-11. **Security Headers** - בדיקת security headers דרך securityheaders.com עם screenshot
-12. **SSL/TLS Certificate** - ניתוח תעודת SSL/TLS באמצעות Python ssl library (Subject, Issuer, SAN, Expiry)
-13. **Technology Detection** - זיהוי CMS, frameworks ותשתית (WordPress, Magento, וכו')
-14. **Cookies Analysis** - ניתוח מפורט של cookies עם קבלת cookie banners אוטומטית
+1. **Headers Check** - HTTP headers analysis with CSP, Cookies, and Referrer-Policy parsing
+2. **DNS/Network Layer Analysis** - A, AAAA, MX, TXT records (SPF, DMARC, DKIM) with misconfiguration detection
+3. **Subdomain Discovery** - Subdomain discovery using subfinder + live subdomain validation
+4. **Nuclei Scan** - Passive vulnerability scanning with templates (technologies + misconfiguration)
+5. **Screenshot** - Homepage screenshot capture using Playwright with WAF bypass
+6. **JavaScript Endpoint Extraction** - Endpoint extraction from JavaScript files (LinkFinder or regex fallback)
+7. **Secret Finder** - Secret discovery in JavaScript files (API keys, tokens, passwords)
+8. **Wayback Machine** - Historical URL search via CDX API (limited to 5000 URLs)
+9. **Sucuri SiteCheck** - Malware/blacklist/security issues check via API
+10. **Check-Host.net** - Host availability and network checks with screenshot
+11. **Security Headers** - Security headers check via securityheaders.com with screenshot
+12. **SSL/TLS Certificate** - SSL/TLS certificate analysis using Python ssl library (Subject, Issuer, SAN, Expiry)
+13. **Technology Detection** - CMS, framework, and infrastructure detection (WordPress, Magento, etc.)
+14. **Cookies Analysis** - Detailed cookie analysis with automatic cookie banner acceptance
 
-## 📚 ספריות Python
+## 📚 Python Libraries
 
-הכלי משתמש בספריות הבאות (רשומות ב-`requirements.txt`):
+The tool uses the following libraries (listed in `requirements.txt`):
 
 ### Core Libraries
-- **jinja2** (>=3.1.2) - ליצירת HTML reports עם templates
-- **playwright** (>=1.40.0) - לסקפורציות ולניווט באתרים (headless browser)
-- **undetected-playwright** (>=0.3.0) - עקיפת WAF/Cloudflare challenges
-- **requests** (>=2.31.0) - קריאות HTTP/HTTPS
-- **beautifulsoup4** (>=4.12.0) - פארסינג HTML (לחילוץ titles, parsing headers)
-- **python-dotenv** (>=1.0.0) - ניהול משתני סביבה (.env)
+- **jinja2** (>=3.1.2) - HTML report generation with templates
+- **playwright** (>=1.40.0) - Screenshots and website navigation (headless browser)
+- **undetected-playwright** (>=0.3.0) - WAF/Cloudflare challenge bypass
+- **requests** (>=2.31.0) - HTTP/HTTPS requests
+- **beautifulsoup4** (>=4.12.0) - HTML parsing (title extraction, header parsing)
+- **python-dotenv** (>=1.0.0) - Environment variable management (.env)
 
 ### Network & Security
-- **dnspython** (>=2.4.2) - שאילתות DNS (A, AAAA, MX, TXT records)
-- **urllib3** - ניהול HTTPS connections (מושתקות אזהרות SSL)
+- **dnspython** (>=2.4.2) - DNS queries (A, AAAA, MX, TXT records)
+- **urllib3** - HTTPS connection management (SSL warnings suppressed)
 
 ### Parsing & Utilities
-- **pyyaml** (>=6.0) - פארסינג YAML (לתמיכה ב-SecretFinder)
-- **requests-file** (>=1.5.1) - קריאת קבצים מקומיים
-- **jsbeautifier** (>=1.14.0) - יפוי JavaScript code (לתמיכה ב-SecretFinder)
-- **lxml** (>=4.9.0) - פארסינג HTML מהיר (לתמיכה ב-BeautifulSoup)
+- **pyyaml** (>=6.0) - YAML parsing (SecretFinder support)
+- **requests-file** (>=1.5.1) - Local file reading
+- **jsbeautifier** (>=1.14.0) - JavaScript code beautification (SecretFinder support)
+- **lxml** (>=4.9.0) - Fast HTML parsing (BeautifulSoup support)
 
-### Built-in Python Modules (כבר כלולים ב-Python)
-- **ssl** - חיבור SSL/TLS ו-parsing תעודות
-- **socket** - חיבורי רשת
-- **json** - עיבוד JSON
-- **logging** - מערכת לוגים מפורטת
-- **subprocess** - הרצת כלים חיצוניים
-- **concurrent.futures** - ביצוע מקבילי של משימות
-- **time** - מדידת זמן ביצוע
-- **signal** - טיפול ב-process termination
-- **datetime** - timestamps
-- **re** - regular expressions (ל-JS endpoint extraction)
-- **random** - randomization ל-WAF bypass
-- **http.cookiejar** - ניהול cookies
+### Built-in Python Modules (included with Python)
+- **ssl** - SSL/TLS connection and certificate parsing
+- **socket** - Network connections
+- **json** - JSON processing
+- **logging** - Detailed logging system
+- **subprocess** - External tool execution
+- **concurrent.futures** - Parallel task execution
+- **time** - Execution time measurement
+- **signal** - Process termination handling
+- **datetime** - Timestamps
+- **re** - Regular expressions (for JS endpoint extraction)
+- **random** - Randomization for WAF bypass
+- **http.cookiejar** - Cookie management
 
-## 🛠️ כלים חיצוניים נדרשים
+## 🛠️ External Tools Required
 
-### חובה (Required)
+### Required
 
 #### subfinder
-גילוי subdomains
+Subdomain discovery
 ```bash
 # macOS (Homebrew)
 brew install subfinder
 
-# או דרך Go
+# Or via Go
 go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
 #### nuclei
-סריקת פגיעויות עם תבניות
+Vulnerability scanning with templates
 ```bash
-# התקן דרך Go
+# Install via Go
 go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 export PATH=$PATH:$(go env GOPATH)/bin
 
-# עדכן תבניות (חשוב!)
+# Update templates (important!)
 nuclei -update -ut
 
-# אם יש בעיות הרשאות:
+# If permission issues:
 sudo chown -R $(whoami) ~/nuclei-templates
 ```
 
 #### playwright
-דפדפנים headless (מותקן דרך pip + playwright install)
+Headless browsers (installed via pip + playwright install)
 ```bash
-# לאחר התקנת requirements.txt:
+# After installing requirements.txt:
 playwright install chromium
 ```
 
-### אופציונלי (Optional - יש fallback)
+### Optional (with fallback)
 
 #### LinkFinder
-חילוץ endpoints מ-JavaScript files (אם לא קיים, הכלי משתמש ב-regex fallback)
+Endpoint extraction from JavaScript files (if not available, tool uses regex fallback)
 ```bash
 pip3 install linkfinder
 
-# או מ-git:
+# Or from git:
 git clone https://github.com/GerbenJavado/LinkFinder.git
 cd LinkFinder
 pip3 install -r requirements.txt
 python3 setup.py install
 ```
 
-**הערה:** אם LinkFinder לא מותקן, הכלי משתמש ב-regex patterns מתקדמים לחילוץ endpoints.
+**Note:** If LinkFinder is not installed, the tool uses advanced regex patterns for endpoint extraction.
 
-## 🚀 התקנה
+## 🚀 Installation
 
-### 1. התקן כלים חיצוניים
+### 1. Install External Tools
 
 ```bash
 # macOS (Homebrew)
@@ -119,189 +119,189 @@ brew install subfinder
 export PATH=$PATH:$(go env GOPATH)/bin
 go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
-# עדכן תבניות nuclei
+# Update nuclei templates
 nuclei -update -ut
 
-# תיקון הרשאות אם נדרש
+# Fix permissions if needed
 sudo chown -R $(whoami) ~/nuclei-templates
 ```
 
-### 2. התקן Python dependencies
+### 2. Install Python Dependencies
 
 ```bash
-# צור virtual environment (מומלץ)
+# Create virtual environment (recommended)
 python3 -m venv venv
 source venv/bin/activate
 
-# התקן packages
+# Install packages
 pip install -r requirements.txt
 
-# התקן Playwright browsers
+# Install Playwright browsers
 playwright install chromium
 ```
 
-### 3. אימות התקנה
+### 3. Verify Installation
 
 ```bash
-# בדוק כלים חיצוניים
+# Check external tools
 which subfinder
 subfinder -version
 nuclei -version
 
-# בדוק Python packages
+# Check Python packages
 python3 -c "import jinja2, playwright, requests, bs4, dns.resolver; print('✅ All packages installed')"
 ```
 
-## 📖 שימוש
+## 📖 Usage
 
-### הרצה בסיסית
+### Basic Usage
 
 ```bash
-# הפעל virtual environment (אם משתמש)
+# Activate virtual environment (if using)
 source venv/bin/activate
 
-# הרץ סריקה על דומיין
+# Run scan on domain
 python3 pt_orchestrator.py example.com
 ```
 
-### דוגמאות
+### Examples
 
 ```bash
-# דומיין רגיל
+# Regular domain
 python3 pt_orchestrator.py example.com
 
-# עם www/http/https - הכלי מנקה אוטומטית
+# With www/http/https - tool automatically normalizes
 python3 pt_orchestrator.py https://www.example.com
 python3 pt_orchestrator.py http://example.com/path
 python3 pt_orchestrator.py www.example.com:8080
 
-# הכלי ינקה את הקלט אוטומטית ל: example.com
+# Tool will automatically normalize input to: example.com
 ```
 
-### מה קורה בזמן הסריקה?
+### What Happens During Scan?
 
-הכלי מציג progress bar בזמן אמת:
-- אחוז התקדמות
-- משימות פעילות
-- זמן שעבר וזמן משוער נותר
-- אזהרות אם משימות נתקעות
+The tool displays a real-time progress bar:
+- Progress percentage
+- Active tasks
+- Elapsed time and estimated remaining time
+- Warnings if tasks get stuck
 
-## 📂 מבנה התוצאות
+## 📂 Output Structure
 
-כל התוצאות נשמרות ב-`pt_output/`:
+All outputs are saved in `pt_output/`:
 
 ```
 pt_output/
-├── {domain}.json              # דוח JSON מלא עם כל הנתונים
-├── {domain}.html              # דוח HTML מקיף עם תוצאות ויזואליות
-├── screenshots/               # צילומי מסך
-│   ├── {domain}.png           # צילום מסך ראשי
+├── {domain}.json              # Complete JSON report with all data
+├── {domain}.html              # Comprehensive HTML report with visual results
+├── screenshots/               # Screenshots
+│   ├── {domain}.png           # Main screenshot
 │   ├── {domain}_checkhost.png
 │   ├── {domain}_securityheaders.png
 │   └── {domain}_cookies.png
-└── logs/                      # לוגים מפורטים
+└── logs/                      # Detailed logs
     └── pt_scan_YYYYMMDD_HHMMSS.log
 ```
 
-### דוח HTML - תכונות
+### HTML Report Features
 
-הדוח HTML כולל:
-- **Technology Detection** - כרטיסים עם טכנולוגיות שזוהו
-- **DNS/Network Analysis** - טבלאות מפורטות של רישומי DNS
-- **Subdomains Grid** - תצוגה ויזואלית של subdomains חיים עם titles
-- **Security Vulnerabilities** - ממצאי Nuclei עם raw output
-- **Screenshots** - תמונות קטנות שפותחות ב-lightbox (קליק להגדלה)
-- **Cookies Analysis** - טבלה מפורטת של כל ה-cookies
-- **JavaScript Endpoints** - רשימה עם חיפוש real-time
-- **Wayback URLs** - רשימה עם חיפוש real-time
-- **SecretFinder Results** - סודות שנמצאו
-- **כל הבדיקות** - טבלה מקיפה של כל התוצאות
+The HTML report includes:
+- **Technology Detection** - Cards with detected technologies
+- **DNS/Network Analysis** - Detailed tables of DNS records
+- **Subdomains Grid** - Visual display of live subdomains with titles
+- **Security Vulnerabilities** - Nuclei findings with raw output
+- **Screenshots** - Thumbnails that open in lightbox (click to enlarge)
+- **Cookies Analysis** - Detailed table of all cookies
+- **JavaScript Endpoints** - List with real-time search
+- **Wayback URLs** - List with real-time search
+- **SecretFinder Results** - Secrets found
+- **All Checks** - Comprehensive table of all results
 
-## 🔍 דיבוג עם לוגים
+## 🔍 Debugging with Logs
 
-### מיקום הלוגים
+### Log Location
 
-הלוגים נשמרים ב: `pt_output/logs/pt_scan_YYYYMMDD_HHMMSS.log`
+Logs are saved in: `pt_output/logs/pt_scan_YYYYMMDD_HHMMSS.log`
 
-כל סריקה יוצרת קובץ לוג חדש עם timestamp (format: `pt_scan_20251101_002321.log`).
+Each scan creates a new log file with timestamp (format: `pt_scan_20251101_002321.log`).
 
-### סוגי הלוגים
+### Log Types
 
-המערכת משתמשת ב-Python `logging` עם רמות הבאות:
+The system uses Python `logging` with the following levels:
 
-- **INFO** - מידע כללי על ביצוע המשימות (start, completion, status)
-- **WARNING** - אזהרות (timeouts קרובים, בעיות קלות, retries)
-- **ERROR** - שגיאות (פקודות שנכשלו, timeouts, exceptions)
-- **DEBUG** - פרטים טכניים (פקודות מלאות, debugging info)
+- **INFO** - General information about task execution (start, completion, status)
+- **WARNING** - Warnings (approaching timeouts, minor issues, retries)
+- **ERROR** - Errors (failed commands, timeouts, exceptions)
+- **DEBUG** - Technical details (full commands, debugging info)
 
-**פורמט לוג:**
+**Log Format:**
 ```
 YYYY-MM-DD HH:MM:SS [LEVEL] [TASK_NAME] Message
 ```
 
-### איך לדבג שגיאות
+### How to Debug Errors
 
-#### 1. מצא את קובץ הלוג האחרון
+#### 1. Find Latest Log File
 
 ```bash
-# רשום את הקבצים לפי תאריך (החדש ביותר ראשון)
+# List files by date (newest first)
 ls -lt pt_output/logs/ | head -1
 
-# או פתח ישירות את האחרון
+# Or open the latest directly
 cat pt_output/logs/$(ls -t pt_output/logs/ | head -1)
 ```
 
-#### 2. חפש שגיאות ספציפיות
+#### 2. Search for Specific Errors
 
 ```bash
-# שגיאות בלבד
+# Errors only
 grep "ERROR" pt_output/logs/pt_scan_*.log
 
-# שגיאות של משימה ספציפית (לדוגמה: NUCLEI)
+# Errors for specific task (e.g., NUCLEI)
 grep "\[NUCLEI\].*ERROR" pt_output/logs/pt_scan_*.log
 
 # Timeouts
 grep "TIMEOUT" pt_output/logs/pt_scan_*.log
 
-# שגיאות SSL
+# SSL errors
 grep "\[SSL\].*ERROR" pt_output/logs/pt_scan_*.log
 
-# שגיאות WAF bypass
+# WAF bypass errors
 grep "\[WAF\]" pt_output/logs/pt_scan_*.log
 ```
 
-#### 3. בדוק משימות ספציפיות
+#### 3. Check Specific Tasks
 
 ```bash
-# כל המידע על משימה (לדוגמה: HEADERS)
+# All information about a task (e.g., HEADERS)
 grep "\[HEADERS\]" pt_output/logs/pt_scan_*.log
 
-# משך זמן ביצוע של כל המשימות
+# Execution duration of all tasks
 grep "completed in" pt_output/logs/pt_scan_*.log
 
-# פקודות שנכשלו
+# Failed commands
 grep "Command failed" pt_output/logs/pt_scan_*.log
 
-# משימות שהצליחו
+# Successful tasks
 grep "✓" pt_output/logs/pt_scan_*.log
 ```
 
-#### 4. צפייה בזמן אמת (Real-time monitoring)
+#### 4. Real-time Monitoring
 
 ```bash
-# Tail לוג בזמן אמת (עדכון אוטומטי תוך כדי סריקה)
+# Tail log in real-time (auto-updates during scan)
 tail -f pt_output/logs/pt_scan_$(ls -t pt_output/logs/ | head -1)
 
-# עם סינון לשגיאות ואזהרות בלבד
+# With filtering for errors and warnings only
 tail -f pt_output/logs/pt_scan_*.log | grep --line-buffered "ERROR\|WARNING"
 
-# רק מידע על משימה ספציפית (לדוגמה: NUCLEI)
+# Only info about specific task (e.g., NUCLEI)
 tail -f pt_output/logs/pt_scan_*.log | grep --line-buffered "\[NUCLEI\]"
 ```
 
-#### 5. דוגמאות לוגים
+#### 5. Log Examples
 
-**לוג מוצלח:**
+**Successful log:**
 ```
 2025-11-01 00:23:21,229 [INFO] [HEADERS] Starting headers check for example.com
 2025-11-01 00:23:21,229 [INFO] [HEADERS] Trying HTTPS connection (max 30 redirects)...
@@ -309,7 +309,7 @@ tail -f pt_output/logs/pt_scan_*.log | grep --line-buffered "\[NUCLEI\]"
 2025-11-01 00:23:22,726 [INFO] [HEADERS] Completed in 1.5s
 ```
 
-**לוג עם timeout:**
+**Log with timeout:**
 ```
 2025-11-01 00:23:21,235 [INFO] [NUCLEI] Starting command: nuclei -u https://example.com...
 2025-11-01 00:23:21,236 [INFO] [NUCLEI] Timeout set to: 300s
@@ -317,14 +317,14 @@ tail -f pt_output/logs/pt_scan_*.log | grep --line-buffered "\[NUCLEI\]"
 2025-11-01 00:28:21,503 [ERROR] [NUCLEI] Command that timed out: nuclei -u https://example.com...
 ```
 
-**לוג עם שגיאה:**
+**Log with error:**
 ```
 2025-11-01 00:23:21,502 [INFO] [CHECKHOST] Querying check-host.net API for www.example.com...
 2025-11-01 00:23:21,949 [ERROR] [CHECKHOST] Command failed with return code 1
 2025-11-01 00:23:21,950 [ERROR] [CHECKHOST] STDERR: Connection timeout
 ```
 
-**לוג מוצלח עם פרטים:**
+**Successful log with details:**
 ```
 2025-11-01 00:23:21,235 [INFO] [NUCLEI] Starting command: nuclei -u https://example.com...
 2025-11-01 00:23:21,236 [INFO] [NUCLEI] Timeout set to: 300s
@@ -332,110 +332,110 @@ tail -f pt_output/logs/pt_scan_*.log | grep --line-buffered "\[NUCLEI\]"
 2025-11-01 00:24:40,475 [INFO] [NUCLEI] Found 17 findings
 ```
 
-#### 6. שגיאות נפוצות ופתרונות
+#### 6. Common Errors and Solutions
 
-##### "command not found" - כלי לא נמצא
+##### "command not found" - Tool Not Found
 
-**תסמינים:**
+**Symptoms:**
 ```
 [ERROR] [SUBDOMAINS] Command failed with return code 127
 [ERROR] [SUBDOMAINS] STDERR: /bin/sh: subfinder: command not found
 ```
 
-**פתרון:**
+**Solution:**
 ```bash
-# בדוק שהכלי מותקן
+# Check if tool is installed
 which subfinder
 which nuclei
 
-# בדוק PATH
+# Check PATH
 echo $PATH | grep -o "$(go env GOPATH)/bin"
 
-# אם חסר, הוסף ל-PATH
+# If missing, add to PATH
 export PATH=$PATH:$(go env GOPATH)/bin
-# הוסף ל-~/.zshrc או ~/.bashrc להמשך
+# Add to ~/.zshrc or ~/.bashrc for persistence
 ```
 
 ##### "TEMPLATE LOADING" errors (Nuclei)
 
-**תסמינים:**
+**Symptoms:**
 ```
 [ERROR] [NUCLEI] STDERR: [WRN] templates: warning: error loading template...
 ```
 
-**פתרון:**
+**Solution:**
 ```bash
-# עדכן תבניות
+# Update templates
 nuclei -update -ut
 
-# תיקון הרשאות
+# Fix permissions
 sudo chown -R $(whoami) ~/nuclei-templates
 
-# בדוק שהתבניות נמצאות
+# Verify templates exist
 ls -la ~/nuclei-templates/
 ```
 
 ##### "Failed to get certificate" (SSL)
 
-**תסמינים:**
+**Symptoms:**
 ```
 [WARNING] [SSL] Failed to get certificate: [Errno 111] Connection refused
 ```
 
-**פתרון:**
-- בדוק שהדומיין פתוח על פורט 443: `curl -I https://example.com`
-- בדוק שאין firewall/blocking
-- בדוק ב-logs את השגיאה הספציפית
+**Solution:**
+- Check domain is open on port 443: `curl -I https://example.com`
+- Check for firewall/blocking
+- Check logs for specific error message
 
 ##### "Timeout" warnings
 
-**תסמינים:**
+**Symptoms:**
 ```
 [WARNING] [NUCLEI] Command took 285.0s (close to timeout of 300s)
 ```
 
-**פתרון:**
-- משימות ארוכות יכולות לקחת זמן (nuclei עד 5 דקות זה תקין)
-- אם המשימה לא התקדמה בכלל - המערכת תעצור אותה אוטומטית
-- בדוק בלוג אם המשימה מתקדמת או נתקעה
+**Solution:**
+- Long tasks can take time (nuclei up to 5 minutes is normal)
+- If task made no progress at all - system will automatically terminate it
+- Check logs to see if task is progressing or stuck
 
 ##### "Cloudflare challenge" / "Human verification"
 
-**תסמינים:**
+**Symptoms:**
 ```
 [WARNING] [SCREENSHOT] Cloudflare challenge detected, waiting...
 ```
 
-**פתרון:**
-- המערכת מנסה לעקוף אוטומטית עם `undetected-playwright`
-- אם עדיין נכשל - בדוק בלוג את הודעות `[WAF]`
-- לפעמים צריך לחכות כמה שניות
+**Solution:**
+- System tries to bypass automatically with `undetected-playwright`
+- If still failing - check logs for `[WAF]` messages
+- Sometimes need to wait a few seconds
 
 ##### "Lightbox not opening" (HTML report)
 
-**תסמינים:**
-- תמונות לא נפתחות כשקולקים עליהן
+**Symptoms:**
+- Images don't open when clicking
 
-**פתרון:**
-- זה תוקן ב-commit האחרון
-- אם עדיין יש בעיה, בדוק console בדפדפן (F12) לשגיאות JavaScript
-- ודא ש-`openLightbox` מוגדר ב-global scope
+**Solution:**
+- Fixed in latest commit
+- If still issue, check browser console (F12) for JavaScript errors
+- Ensure `openLightbox` is defined in global scope
 
-#### 7. ניתוח ביצועים
+#### 7. Performance Analysis
 
 ```bash
-# סכם משכי זמן של כל המשימות
+# Summarize execution times of all tasks
 grep "completed in" pt_output/logs/pt_scan_*.log | awk '{print $NF}' | sort -n
 
-# מצא את המשימה הארוכה ביותר
+# Find longest task
 grep "completed in" pt_output/logs/pt_scan_*.log | sort -t's' -k2 -rn | head -1
 
-# ספור משימות שהצליחו vs נכשלו
+# Count successful vs failed tasks
 echo "Success: $(grep '✓' pt_output/logs/pt_scan_*.log | wc -l)"
 echo "Errors: $(grep 'ERROR' pt_output/logs/pt_scan_*.log | wc -l)"
 ```
 
-### צפייה בדוח HTML
+### Viewing HTML Report
 
 ```bash
 # macOS
@@ -447,155 +447,155 @@ xdg-open pt_output/example.com.html
 # Windows
 start pt_output/example.com.html
 
-# או בדפדפן ספציפי
+# Or specific browser
 google-chrome pt_output/example.com.html
 ```
 
-## ⚙️ הגדרות
+## ⚙️ Configuration
 
 ### Timeouts
 
-ברירת המחדל ב-`pt_orchestrator.py`:
+Defaults in `pt_orchestrator.py`:
 
 ```python
 TIMEOUTS = {
-    "headers": 30,           # 30 שניות
-    "subdomains": 120,       # 2 דקות
-    "nuclei": 300,           # 5 דקות
-    "screenshot": 60,        # 1 דקה
-    "dns": 30,               # 30 שניות
-    "js_endpoints": 120,     # 2 דקות
-    "secretfinder": 300,     # 5 דקות
-    "cookies": 180,          # 3 דקות
+    "headers": 30,           # 30 seconds
+    "subdomains": 120,       # 2 minutes
+    "nuclei": 300,           # 5 minutes
+    "screenshot": 60,        # 1 minute
+    "dns": 30,               # 30 seconds
+    "js_endpoints": 120,     # 2 minutes
+    "secretfinder": 300,     # 5 minutes
+    "cookies": 180,          # 3 minutes
 }
 ```
 
-אפשר לשנות את הערכים ב-`pt_orchestrator.py` לפי הצורך.
+You can modify these values in `pt_orchestrator.py` as needed.
 
 ### Parallel Execution
 
-המערכת רצה עד **8 משימות במקביל** (ThreadPoolExecutor).
+The system runs up to **8 tasks in parallel** (ThreadPoolExecutor).
 
-אפשר לשנות ב-`pt_orchestrator.py`:
+You can modify in `pt_orchestrator.py`:
 ```python
 with ThreadPoolExecutor(max_workers=8) as executor:
 ```
 
 ### Domain Normalization
 
-הכלי מנקה אוטומטית קלט של דומיינים:
-- מוסיף `https://` אם חסר
-- מסיר `www.` אם קיים (חוץ מבדיקות ספציפיות כמו Check-Host)
-- מסיר paths (`/path/to/page`) ו-ports (`:8080`)
-- מנרמל את הדומיין לפורמט תקין
+The tool automatically normalizes domain input:
+- Adds `https://` if missing
+- Removes `www.` if present (except for specific checks like Check-Host)
+- Removes paths (`/path/to/page`) and ports (`:8080`)
+- Normalizes domain to correct format
 
 ### Stuck Process Detection
 
-המערכת מזהה משימות שנתקעות (לא מתקדמות) ומסיימת אותן אוטומטית:
-- בודקת אם יש התקדמות כל 10 שניות
-- אם אין התקדמות במשך זמן ממושך - מסיימת את התהליך
-- מציינת בלוג שהיא סיימה את התהליך
+The system detects stuck tasks (not progressing) and automatically terminates them:
+- Checks for progress every 10 seconds
+- If no progress for extended time - terminates the process
+- Logs that it terminated the process
 
-## 🔒 אבטחה והתנהגות
+## 🔒 Security and Behavior
 
-- **Timeouts**: כל הסריקות מכבדות timeouts כדי למנוע תקיעה
-- **Rate Limiting**: API calls כוללות עיכובים של 1-2 שניות
-- **WAF Bypass**: עקיפת Cloudflare/WAF באמצעות `undetected-playwright` + fingerprinting
-- **Audit Trail**: הלוגים כוללים מי הריץ, מתי, ומה (timestamped logs)
-- **Raw Outputs**: כל ה-outputs הגולמיים נשמרים כראיות
-- **Process Cleanup**: תהליכים שנכשלו מסתיימים בצורה נקייה (process tree killing)
+- **Timeouts**: All scans respect timeouts to prevent hanging
+- **Rate Limiting**: API calls include 1-2 second delays
+- **WAF Bypass**: Cloudflare/WAF bypass using `undetected-playwright` + fingerprinting
+- **Audit Trail**: Logs include who ran, when, and what (timestamped logs)
+- **Raw Outputs**: All raw outputs are preserved as evidence
+- **Process Cleanup**: Failed processes are terminated cleanly (process tree killing)
 
-**⚠️ שימוש אתי:** השתמש רק על דומיינים שבבעלותך או שיש לך הרשאה מפורשת לבדוק!
+**⚠️ Ethical Use:** Only use on domains you own or have explicit permission to test!
 
 ## 🐛 Troubleshooting
 
-### בעיות התקנה
+### Installation Issues
 
-**Python packages לא מתקינים:**
+**Python packages not installing:**
 ```bash
-# עדכן pip
+# Update pip
 pip install --upgrade pip
 
-# נסה שוב
+# Try again
 pip install -r requirements.txt
 ```
 
-**Playwright browsers לא מתקינים:**
+**Playwright browsers not installing:**
 ```bash
 playwright install chromium --force
 ```
 
-**Go tools לא נמצאים:**
+**Go tools not found:**
 ```bash
-# ודא ש-Go מותקן
+# Verify Go is installed
 go version
 
-# הוסף Go bin ל-PATH
+# Add Go bin to PATH
 export PATH=$PATH:$(go env GOPATH)/bin
 echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.zshrc
 ```
 
-### בעיות ריצה
+### Runtime Issues
 
 **"ModuleNotFoundError":**
 ```bash
-# ודא ש-venv פעיל
+# Ensure venv is active
 source venv/bin/activate
 
-# התקן שוב
+# Reinstall
 pip install -r requirements.txt
 ```
 
-**"Permission denied" ב-logs:**
+**"Permission denied" in logs:**
 ```bash
-# בדוק הרשאות
+# Check permissions
 ls -la pt_output/logs/
 
-# תיקון הרשאות
+# Fix permissions
 chmod -R 755 pt_output/
 ```
 
-**הסריקה נתקעת:**
-- בדוק בלוג אם יש אזהרות
-- בדוק אם יש תהליכים תקועים: `ps aux | grep nuclei`
-- עצור תהליכים תקועים: `pkill -f nuclei`
+**Scan gets stuck:**
+- Check logs for warnings
+- Check for stuck processes: `ps aux | grep nuclei`
+- Kill stuck processes: `pkill -f nuclei`
 
-## 📝 מבנה הפרויקט
+## 📝 Project Structure
 
 ```
 pt_automation/
-├── pt_orchestrator.py      # הקוד הראשי
+├── pt_orchestrator.py      # Main code
 ├── requirements.txt         # Python dependencies
 ├── templates/
-│   └── report.html          # Template ל-HTML report
+│   └── report.html          # HTML report template
 ├── tools/
 │   └── secretfinder/       # SecretFinder tool
-├── pt_output/              # תוצאות (לא ב-git)
+├── pt_output/              # Outputs (not in git)
 │   ├── {domain}.json
 │   ├── {domain}.html
 │   ├── screenshots/
 │   └── logs/
-└── README.md               # הקובץ הזה
+└── README.md               # This file
 ```
 
-## 🔄 עדכונים אחרונים
+## 🔄 Recent Updates
 
-- ✅ תיקון lightbox - תמונות נפתחות עכשיו כראוי
-- ✅ SSL certificate parsing משופר
-- ✅ JS endpoints extraction משופר עם regex מתקדם
-- ✅ Cookies analysis עם קבלת banners אוטומטית
-- ✅ WAF bypass משופר עם undetected-playwright
+- ✅ Fixed lightbox - images now open properly
+- ✅ Improved SSL certificate parsing
+- ✅ Enhanced JS endpoints extraction with advanced regex
+- ✅ Cookies analysis with automatic banner acceptance
+- ✅ Improved WAF bypass with undetected-playwright
 - ✅ Stuck process detection
-- ✅ Progress bar פעיל עם זמן משוער
+- ✅ Active progress bar with estimated time
 
-## 📝 רישיון
+## 📝 License
 
-כלי זה מיועד לבדיקות אבטחה מורשות בלבד. השתמש באחריות ובצורה אתית.
+This tool is intended for authorized security testing only. Use responsibly and ethically.
 
-## 🤝 תרומות
+## 🤝 Contributions
 
-פתוח להצעות שיפור, bug fixes, ותכונות נוספות.
+Open to suggestions, bug fixes, and additional features.
 
 ---
 
-**Note:** הדוח ה-HTML כולל lightbox לתמונות, חיפוש real-time, תצוגות מפורטות, וכל המידע מאורגן בצורה נוחה לקריאה.
+**Note:** The HTML report includes lightbox for images, real-time search, detailed displays, and all information is organized in an easy-to-read format.
