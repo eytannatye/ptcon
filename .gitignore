@@ -28,6 +28,8 @@ Thumbs.db
 # Environment
 .env
 *.env
+g.env.pub
+*.pub
 
 # Tools
 tools/secretfinder/__pycache__/
