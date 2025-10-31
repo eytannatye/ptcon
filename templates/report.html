@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Report - {{ domain }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #ecf0f1;
+            border-left: 4px solid #3498db;
+        }
+        .summary {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .summary p {
+            margin: 5px 0;
+        }
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .stat-box h3 {
+            color: #3498db;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        .stat-box p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-box h3 {
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+        .findings-summary {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .findings-summary h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+        .findings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .finding-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .finding-card h4 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        .finding-card .count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .check-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #fafafa;
+        }
+        .check-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 5px 15px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .duration-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+        }
+        .data-table th {
+            background: #34495e;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .data-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        .url-list {
+            list-style: none;
+            padding-left: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            background: white;
+        }
+        .url-list li {
+            padding: 5px;
+            margin: 3px 0;
+            background: #f8f9fa;
+            border-left: 3px solid #3498db;
+            word-break: break-all;
+        }
+        .screenshot {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .screenshot img {
+            max-width: 300px;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            transition: transform 0.2s;
+        }
+        .screenshot img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .screenshot-thumbnail {
+            cursor: pointer !important;
+        }
+        /* Lightbox Modal */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            overflow: auto;
+        }
+        .lightbox-modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1200px;
+            margin-top: 50px;
+        }
+        .lightbox-modal img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .lightbox-close:hover {
+            color: #fff;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .stuck-warning {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        details {
+            margin-top: 10px;
+        }
+        summary {
+            cursor: pointer;
+            color: #3498db;
+            font-weight: 600;
+            padding: 5px;
+        }
+        summary:hover {
+            color: #2980b9;
+        }
+        .json-data {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        pre {
+            margin: 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        code {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 PT Report - {{ domain }}</h1>
+
+        {# Technology Detection #}
+        {% set tech_result = results.get('tech_detection', {}) %}
+        {% if tech_result.get('technologies') %}
+        <h2>🔧 Technologies Detected</h2>
+        <div class="findings-summary">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+                {% for tech in tech_result.technologies %}
+                <div style="background: #e8f4f8; padding: 10px 15px; border-radius: 5px; border: 2px solid #3498db; display: inline-block;">
+                    <strong style="color: #2c3e50;">{{ tech }}</strong>
+                    {% if tech_result.evidence.get(tech) %}
+                        <div style="font-size: 0.85em; color: #6c757d; margin-top: 5px;">
+                            {% for ev in tech_result.evidence[tech][:2] %}
+                                <small>{{ ev }}</small>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# DNS / Network Layer Analysis #}
+        {% set dns_result = results.get('dns', {}) %}
+        {% if dns_result.get('a_records') or dns_result.get('mx_records') or dns_result.get('txt_records') %}
+        <h2>🌐 DNS / Network Layer Analysis</h2>
+        <div class="findings-summary">
+            {% if dns_result.get('a_records') %}
+            <div style="margin-bottom: 15px;">
+                <h3>A Records ({{ dns_result.a_records | length }})</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    {% for ip in dns_result.a_records %}
+                    <code style="background: white; padding: 5px 10px; border-radius: 3px; border: 1px solid #ddd;">{{ ip }}</code>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if dns_result.get('aaaa_records') %}
+            <div style="margin-bottom: 15px;">
+                <h3>AAAA Records (IPv6) ({{ dns_result.aaaa_records | length }})</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    {% for ipv6 in dns_result.aaaa_records %}
+                    <code style="background: white; padding: 5px 10px; border-radius: 3px; border: 1px solid #ddd;">{{ ipv6 }}</code>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if dns_result.get('mx_records') %}
+            <div style="margin-bottom: 15px;">
+                <h3>MX Records ({{ dns_result.mx_records | length }})</h3>
+                <table class="data-table" style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Priority</th>
+                            <th>Host</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mx in dns_result.mx_records %}
+                        <tr>
+                            <td>{{ mx.priority }}</td>
+                            <td><code>{{ mx.host }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            <div style="margin-bottom: 15px;">
+                <h3>Email Security</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+                    {% if dns_result.get('spf') %}
+                    <div style="background: #e8f5e9; padding: 10px; border-radius: 5px; border: 1px solid #4caf50;">
+                        <strong>SPF Record</strong>
+                        <div style="font-size: 0.9em; margin-top: 5px; word-break: break-all;"><code>{{ dns_result.spf[:100] }}{% if dns_result.spf|length > 100 %}...{% endif %}</code></div>
+                    </div>
+                    {% else %}
+                    <div style="background: #ffebee; padding: 10px; border-radius: 5px; border: 1px solid #f44336;">
+                        <strong>SPF Record</strong>
+                        <div style="color: #c62828; margin-top: 5px;">Not found</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if dns_result.get('dmarc') %}
+                    <div style="background: #e8f5e9; padding: 10px; border-radius: 5px; border: 1px solid #4caf50;">
+                        <strong>DMARC Record</strong>
+                        <div style="font-size: 0.9em; margin-top: 5px; word-break: break-all;"><code>{{ dns_result.dmarc[:100] }}{% if dns_result.dmarc|length > 100 %}...{% endif %}</code></div>
+                    </div>
+                    {% else %}
+                    <div style="background: #ffebee; padding: 10px; border-radius: 5px; border: 1px solid #f44336;">
+                        <strong>DMARC Record</strong>
+                        <div style="color: #c62828; margin-top: 5px;">Not found</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if dns_result.get('dkim') %}
+                    <div style="background: #e8f5e9; padding: 10px; border-radius: 5px; border: 1px solid #4caf50;">
+                        <strong>DKIM Record</strong>
+                        <div style="font-size: 0.9em; margin-top: 5px; word-break: break-all;"><code>{{ dns_result.dkim[:100] }}{% if dns_result.dkim|length > 100 %}...{% endif %}</code></div>
+                    </div>
+                    {% else %}
+                    <div style="background: #fff3e0; padding: 10px; border-radius: 5px; border: 1px solid #ff9800;">
+                        <strong>DKIM Record</strong>
+                        <div style="color: #e65100; margin-top: 5px;">Not found</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if dns_result.get('misconfigurations') %}
+            <div style="margin-bottom: 15px;">
+                <h3>⚠️ Misconfigurations</h3>
+                <ul>
+                    {% for misconfig in dns_result.misconfigurations %}
+                    <li style="color: #d32f2f; margin: 5px 0;">{{ misconfig }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if dns_result.get('txt_records') %}
+            <details style="margin-top: 15px;">
+                <summary style="cursor: pointer; font-weight: bold;">View All TXT Records ({{ dns_result.txt_records | length }})</summary>
+                <div style="margin-top: 10px;">
+                    {% for txt in dns_result.txt_records %}
+                    <div style="background: white; padding: 8px; margin: 5px 0; border-radius: 3px; border: 1px solid #ddd; word-break: break-all;">
+                        <code>{{ txt }}</code>
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# Cookies Analysis - Separate Report #}
+        {% set cookies_result = results.get('cookies', {}) %}
+        {% if cookies_result.get('cookies') and cookies_result.cookies_count > 0 %}
+        <h2>🍪 Cookies Analysis</h2>
+        <div class="findings-summary">
+            <p style="font-size: 0.9em; color: #6c757d; margin-bottom: 10px;">
+                Cookie banner accepted: <strong>{{ 'Yes' if cookies_result.get('cookie_banner_accepted') else 'No' }}</strong> | 
+                Total cookies found: <strong>{{ cookies_result.cookies_count }}</strong>
+            </p>
+            {% if cookies_result.get('screenshot_path') %}
+            <div class="screenshot" style="margin-bottom: 20px;">
+                <h4>Screenshot</h4>
+                <img src="{{ cookies_result.screenshot_path }}" alt="Cookies Analysis Screenshot" class="screenshot-thumbnail" onclick="openLightbox('{{ cookies_result.screenshot_path }}', 'Cookies Analysis Screenshot')" style="cursor: pointer;">
+                <p style="text-align: center; color: #7f8c8d; margin-top: 5px; font-size: 0.9em;">{{ cookies_result.screenshot_path }} (Click to enlarge)</p>
+            </div>
+            {% endif %}
+            <table class="data-table" style="margin-top: 15px;">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Domain</th>
+                        <th>Path</th>
+                        <th>Secure</th>
+                        <th>HttpOnly</th>
+                        <th>SameSite</th>
+                        <th>Session</th>
+                        <th>Warnings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cookie in cookies_result.cookies %}
+                    <tr>
+                        <td><code>{{ cookie.name }}</code></td>
+                        <td><code>{{ cookie.domain }}</code></td>
+                        <td><code>{{ cookie.path }}</code></td>
+                        <td>
+                            {% if cookie.secure %}
+                                <span style="color: #28a745;">✓</span>
+                            {% else %}
+                                <span style="color: #dc3545;">✗</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cookie.httpOnly %}
+                                <span style="color: #28a745;">✓</span>
+                            {% else %}
+                                <span style="color: #dc3545;">✗</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ cookie.sameSite }}</td>
+                        <td>
+                            {% if cookie.session %}
+                                <span style="color: #ff9800;">Yes</span>
+                            {% else %}
+                                <span style="color: #6c757d;">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cookie.weaknesses and cookie.weaknesses|length > 0 %}
+                                <span style="color: #dc3545;">⚠️ {{ cookie.weaknesses | join(', ') }}</span>
+                            {% else %}
+                                <span style="color: #28a745;">OK</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {# Visual Subdomains Discovery #}
+        {% set subdomain_result = results.get('subdomains', {}) %}
+        {% if subdomain_result.get('subdomains') %}
+        <h2>🌐 Subdomains Discovered</h2>
+        <div class="findings-summary">
+            <h3>{{ subdomain_result.subdomains | length }} Subdomains Found</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 15px;">
+                {% for subdomain in subdomain_result.subdomains %}
+                    {% if subdomain is mapping %}
+                        {% set sub_name = subdomain.subdomain %}
+                        {% set sub_title = subdomain.get('title', '') %}
+                    {% else %}
+                        {% set sub_name = subdomain | string %}
+                        {% set sub_title = '' %}
+                    {% endif %}
+                    {% if sub_name and sub_name.strip() %}
+                    <div style="background: white; padding: 12px; border-radius: 5px; border: 1px solid #3498db; border-left: 4px solid #3498db;">
+                        <strong style="color: #2c3e50; word-break: break-all;">{{ sub_name }}</strong>
+                        {% if sub_title %}
+                        <div style="color: #6c757d; font-size: 0.85em; margin-top: 5px;">{{ sub_title }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Final Results Summary Table #}
+        <div style="margin-top: 30px;">
+            <details style="cursor: pointer;">
+                <summary style="font-size: 1.2em; font-weight: bold; padding: 10px; background: #ecf0f1; border-radius: 5px; user-select: none;">
+                    <h3 style="margin: 0; display: inline;">📋 All Check Results (Click to expand)</h3>
+                </summary>
+                <table class="data-table" style="margin-top: 15px;">
+                <thead>
+                    <tr>
+                        <th>Check</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, result in results.items() %}
+                    <tr>
+                        <td><strong>{{ key|upper }}</strong></td>
+                        <td>
+                            {% if result.rc == 0 %}
+                                <span class="status status-success">✓ SUCCESS</span>
+                            {% elif result.rc == -1 %}
+                                <span class="status status-error">⏱ TIMEOUT</span>
+                            {% elif result.rc == -2 %}
+                                <span class="status status-error">❌ ERROR</span>
+                            {% elif result.rc == -3 or result.stuck %}
+                                <span class="status status-error">⚠️ STUCK</span>
+                            {% else %}
+                                <span class="status status-warning">⚠️ WARNING</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.duration %}
+                                {{ "%.1f" | format(result.duration) }}s
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if key == 'subdomains' and result.subdomains %}
+                                {{ result.subdomains | length }} subdomains
+                            {% elif key == 'wayback' and result.urls_found %}
+                                {{ result.urls_found }} URLs
+                            {% elif key == 'nuclei' and result.findings %}
+                                {{ result.findings | length }} vulnerabilities
+                            {% elif result.rc == 0 %}
+                                ✓ Completed
+                            {% else %}
+                                {{ result.stderr[:50] if result.stderr else 'No details' }}...
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </details>
+        </div>
+
+        {# All Other Findings #}
+        {% set total_urls = results.get('wayback', {}).get('urls_found', 0) %}
+        {% set total_findings = results.get('nuclei', {}).get('findings', []) | length %}
+        {% set secretfinder_result = results.get('secretfinder', {}) %}
+        {% set total_secrets = secretfinder_result.get('secrets_count', 0) %}
+        {% set js_endpoints_result = results.get('js_endpoints', {}) %}
+        {% set total_js_endpoints = js_endpoints_result.get('endpoint_count', 0) %}
+        
+        {% if total_urls > 0 or total_findings > 0 or total_secrets > 0 or total_js_endpoints > 0 %}
+        <h2>🔍 Additional Findings</h2>
+        
+        {# SecretFinder Results #}
+        {% if secretfinder_result.get('secrets') and secretfinder_result.secrets_count > 0 %}
+        <div class="findings-summary" style="margin-top: 20px;">
+            <h3>🔐 Secrets Found ({{ secretfinder_result.secrets_count }})</h3>
+            <p style="font-size: 0.9em; color: #6c757d; margin-bottom: 10px;">
+                Secrets discovered in JavaScript files using SecretFinder
+            </p>
+            <details style="margin-top: 10px;">
+                <summary style="font-weight: bold; cursor: pointer; padding: 5px; background: #ffe0e0; border-radius: 3px; border: 2px solid #dc3545;">
+                    Show All {{ secretfinder_result.secrets_count }} Secrets
+                </summary>
+                <div class="json-data" style="margin-top: 10px; max-height: 500px; overflow-y: auto;">
+                    <pre>{% for secret in secretfinder_result.secrets %}{{ secret|e }}
+{% endfor %}</pre>
+                </div>
+            </details>
+        </div>
+        {% endif %}
+        
+        {% if total_urls > 0 %}
+        <div class="findings-summary" style="margin-top: 20px;">
+            <h3>📜 Historical URLs Discovered ({{ total_urls }})</h3>
+            {% set wayback_result = results.get('wayback', {}) %}
+            {% set wayback_urls = wayback_result.get('urls', wayback_result.get('sample_urls', [])) %}
+            {% if wayback_urls %}
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="waybackSearch" placeholder="Search URLs..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em;">
+                </div>
+                <ul class="url-list" id="waybackUrlList">
+                    {% for url in wayback_urls %}
+                        <li class="wayback-url-item">{{ url }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+
+        {% if js_endpoints_result.get('endpoints') and js_endpoints_result.endpoint_count > 0 %}
+        <div class="findings-summary" style="margin-top: 20px;">
+            <h3>🔗 JavaScript Endpoints Discovered ({{ js_endpoints_result.endpoint_count }})</h3>
+            <p style="font-size: 0.9em; color: #6c757d; margin-bottom: 10px;">
+                Method: <strong>{{ 'LinkFinder' if js_endpoints_result.linkfinder_used else 'Regex fallback' }}</strong>
+                {% if js_endpoints_result.get('js_files_found') %}
+                | JS Files Found: {{ js_endpoints_result.js_files_found }}
+                {% endif %}
+            </p>
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="jsEndpointsSearch" placeholder="Search endpoints..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em;">
+            </div>
+            <details style="margin-top: 10px;">
+                <summary style="font-weight: bold; cursor: pointer; padding: 5px; background: #e8f4f8; border-radius: 3px;">
+                    Show All {{ js_endpoints_result.endpoint_count }} Endpoints
+                </summary>
+                <ul class="url-list" id="jsEndpointsList" style="max-height: 500px; overflow-y: auto; margin-top: 10px;">
+                    {% for endpoint in js_endpoints_result.endpoints %}
+                        <li class="js-endpoint-item">{{ endpoint|e }}</li>
+                    {% endfor %}
+                </ul>
+            </details>
+        </div>
+        {% endif %}
+
+        {% if total_findings > 0 %}
+        <div class="findings-summary" style="margin-top: 20px;">
+            <h3>⚠️ Security Vulnerabilities Found ({{ total_findings }}) - NUCLEI Scan</h3>
+            {% set nuclei_result = results.get('nuclei', {}) %}
+            {% if nuclei_result.get('findings') %}
+                <table class="data-table" style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th>Template</th>
+                            <th>Severity</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for finding in nuclei_result.findings %}
+                        <tr>
+                            <td><strong>{% if finding is mapping %}{{ finding.get('template', finding.get('name', 'Unknown')) }}{% else %}{{ finding[:100] }}{% endif %}</strong></td>
+                            <td>
+                                {% if finding is mapping %}
+                                    {% set severity = (finding.get('severity', 'info') | upper) %}
+                                    {% if severity == 'CRITICAL' or severity == 'HIGH' %}
+                                        <span style="color: #dc3545; font-weight: bold; background: #ffe6e6; padding: 3px 8px; border-radius: 3px;">{{ severity }}</span>
+                                    {% elif severity == 'MEDIUM' %}
+                                        <span style="color: #ffc107; font-weight: bold; background: #fff3cd; padding: 3px 8px; border-radius: 3px;">{{ severity }}</span>
+                                    {% else %}
+                                        <span style="color: #6c757d; padding: 3px 8px; border-radius: 3px;">{{ severity }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #6c757d;">INFO</span>
+                                {% endif %}
+                            </td>
+                            <td><code style="word-break: break-all;">{% if finding is mapping %}{{ finding.get('url', finding.get('matched-at', 'N/A'))[:150] }}{% else %}See raw output{% endif %}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# Check Results Section #}
+        <h2>🔧 Check Results</h2>
+        
+        {% for key, result in results.items() %}
+        <div class="check-section">
+            <div class="check-header">
+                <div>
+                    <h3 style="margin: 0; display: inline;">{{ key|upper }}</h3>
+                    {% if result.duration %}
+                    <span class="duration-badge">⏱️ {{ "%.1f" | format(result.duration) }}s</span>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if result.rc == 0 %}
+                        <span class="status status-success">✓ SUCCESS</span>
+                    {% elif result.rc == -1 %}
+                        <span class="status status-error">⏱ TIMEOUT</span>
+                    {% elif result.rc == -2 %}
+                        <span class="status status-error">❌ ERROR</span>
+                    {% elif result.rc == -3 or result.stuck %}
+                        <span class="status status-error">⚠️ STUCK</span>
+                    {% else %}
+                        <span class="status status-warning">⚠️ WARNING ({{ result.rc }})</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if result.stuck %}
+            <div class="stuck-warning">
+                <strong>⚠️ This check was detected as stuck and was terminated.</strong>
+            </div>
+            {% endif %}
+
+            {# CSP & Cookie Analysis - for headers check #}
+            {% if key == 'headers' and (result.get('csp_analysis') or result.get('cookie_analysis') or result.get('referrer_policy')) %}
+                <div class="data-section">
+                    <h4>Security Headers Analysis</h4>
+                    
+                    {# CSP Analysis #}
+                    {% if result.get('csp_analysis') %}
+                    <div style="margin-bottom: 20px;">
+                        <h5>Content-Security-Policy</h5>
+                        {% if result.csp_analysis.present %}
+                            {% if result.csp_analysis.directives %}
+                            <table class="data-table" style="margin-top: 10px;">
+                                <thead>
+                                    <tr>
+                                        <th>Directive</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for directive, value in result.csp_analysis.directives.items() %}
+                                    <tr>
+                                        <td><code>{{ directive }}</code></td>
+                                        <td><code style="word-break: break-all;">{{ value[:200] }}{% if value|length > 200 %}...{% endif %}</code></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% endif %}
+                            
+                            {% if result.csp_analysis.weaknesses %}
+                            <div style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffc107; margin-top: 10px;">
+                                <strong>⚠️ Weaknesses Found:</strong>
+                                <ul style="margin: 5px 0;">
+                                    {% for weakness in result.csp_analysis.weaknesses %}
+                                    <li>{{ weakness }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            
+                            {% if result.csp_analysis.missing_directives %}
+                            <div style="background: #ffe0e0; padding: 10px; border-radius: 5px; border: 1px solid #dc3545; margin-top: 10px;">
+                                <strong>Missing Directives:</strong>
+                                <ul style="margin: 5px 0;">
+                                    {% for missing in result.csp_analysis.missing_directives %}
+                                    <li>{{ missing }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div style="background: #ffe0e0; padding: 10px; border-radius: 5px; border: 1px solid #dc3545;">
+                                <strong>⚠️ Content-Security-Policy header not present</strong>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {# Cookie Analysis #}
+                    {% if result.get('cookie_analysis') and result.cookie_analysis|length > 0 %}
+                    <div style="margin-bottom: 20px;">
+                        <h5>Cookie Analysis ({{ result.cookie_analysis | length }} cookies)</h5>
+                        <table class="data-table" style="margin-top: 10px;">
+                            <thead>
+                                <tr>
+                                    <th>Cookie Name</th>
+                                    <th>Secure</th>
+                                    <th>HttpOnly</th>
+                                    <th>SameSite</th>
+                                    <th>Warnings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cookie in result.cookie_analysis %}
+                                <tr>
+                                    <td><code>{{ cookie.name }}</code></td>
+                                    <td>
+                                        {% if cookie.secure %}
+                                            <span style="color: #28a745;">✓</span>
+                                        {% else %}
+                                            <span style="color: #dc3545;">✗</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cookie.httponly %}
+                                            <span style="color: #28a745;">✓</span>
+                                        {% else %}
+                                            <span style="color: #dc3545;">✗</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ cookie.samesite if cookie.samesite else 'N/A' }}</td>
+                                    <td>
+                                        {% if cookie.weaknesses %}
+                                            <span style="color: #dc3545;">⚠️ {{ cookie.weaknesses | join(', ') }}</span>
+                                        {% else %}
+                                            <span style="color: #28a745;">OK</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                    
+                    {# Referrer-Policy #}
+                    {% if result.get('referrer_policy') %}
+                    <div style="margin-bottom: 20px;">
+                        <h5>Referrer-Policy</h5>
+                        <div style="background: white; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                            <code>{{ result.referrer_policy }}</code>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Screenshot - for screenshot, checkhost, securityheaders #}
+            {% if result.screenshot_path %}
+                <div class="screenshot">
+                    <h4>Screenshot</h4>
+                    <img src="{{ result.screenshot_path }}" alt="Screenshot for {{ key }}" class="screenshot-thumbnail" onclick="openLightbox('{{ result.screenshot_path }}', 'Screenshot for {{ key|upper }}')" style="cursor: pointer;">
+                    <p style="text-align: center; color: #7f8c8d; margin-top: 5px; font-size: 0.9em;">{{ result.screenshot_path }} (Click to enlarge)</p>
+                </div>
+            {% endif %}
+
+            {# Subdomains - Better Display #}
+            {% if key == 'subdomains' and result.subdomains %}
+                <div class="data-section">
+                    <h4>Subdomains Found: {{ result.subdomains|length }}</h4>
+                    <ul class="url-list">
+                        {% for subdomain in result.subdomains[:50] %}
+                            {% if subdomain is mapping %}
+                                <li>
+                                    <strong>{{ subdomain.subdomain }}</strong>
+                                    {% if subdomain.title %}
+                                        <span style="color: #6c757d; font-size: 0.9em;"> - {{ subdomain.title }}</span>
+                                    {% endif %}
+                                </li>
+                            {% elif subdomain.strip() %}
+                                <li>{{ subdomain }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% if result.subdomains|length > 50 %}
+                        <p><em>... and {{ result.subdomains|length - 50 }} more subdomains (view raw output for complete list)</em></p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+
+            {# Nuclei Output - Raw Only #}
+            {% if key == 'nuclei' %}
+                {% if result.output %}
+                    <div class="data-section">
+                        <h4>Nuclei Scan Results</h4>
+                        <p><em>Nuclei scan completed. View raw output below for all findings.</em></p>
+                        <details>
+                            <summary style="font-weight: bold; cursor: pointer; padding: 10px; background: #e8f4f8; border-radius: 5px;">
+                                📄 View Raw Output ({{ result.output|length }} chars)
+                            </summary>
+                            <div class="json-data" style="margin-top: 10px;">
+                                <pre>{{ result.output }}</pre>
+                            </div>
+                        </details>
+                    </div>
+                {% else %}
+                    <div class="data-section">
+                        <p><em>Nuclei scan completed. No findings.</em></p>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {# Sucuri - Detailed Display #}
+            {% if key == 'sucuri' and result.data %}
+                <div class="data-section">
+                    <h4>Sucuri SiteCheck Analysis</h4>
+                    
+                    {# Ratings #}
+                    {% if result.get('ratings') %}
+                        <div style="margin-bottom: 20px;">
+                            <h5>Security Ratings</h5>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                {% if result.ratings.get('total') %}
+                                    {% set total_rating = result.ratings.total.get('rating', 'N/A') %}
+                                    <div style="background: {% if total_rating == 'A' %}#e8f5e9{% elif total_rating == 'B' %}#fff3cd{% elif total_rating == 'C' %}#ffe0e0{% else %}#f5f5f5{% endif %}; padding: 15px; border-radius: 5px; border: 2px solid {% if total_rating == 'A' %}#4caf50{% elif total_rating == 'B' %}#ffc107{% elif total_rating == 'C' %}#dc3545{% else %}#6c757d{% endif %};">
+                                        <strong>Total Rating</strong>
+                                        <div style="font-size: 2em; font-weight: bold; color: {% if total_rating == 'A' %}#2e7d32{% elif total_rating == 'B' %}#856404{% elif total_rating == 'C' %}#c62828{% else %}#424242{% endif %};">{{ total_rating }}</div>
+                                    </div>
+                                {% endif %}
+                                {% if result.ratings.get('security') %}
+                                    {% set sec_rating = result.ratings.security.get('rating', 'N/A') %}
+                                    <div style="background: {% if sec_rating == 'A' %}#e8f5e9{% elif sec_rating == 'B' %}#fff3cd{% elif sec_rating == 'C' %}#ffe0e0{% else %}#f5f5f5{% endif %}; padding: 15px; border-radius: 5px; border: 2px solid {% if sec_rating == 'A' %}#4caf50{% elif sec_rating == 'B' %}#ffc107{% elif sec_rating == 'C' %}#dc3545{% else %}#6c757d{% endif %};">
+                                        <strong>Security</strong>
+                                        <div style="font-size: 2em; font-weight: bold; color: {% if sec_rating == 'A' %}#2e7d32{% elif sec_rating == 'B' %}#856404{% elif sec_rating == 'C' %}#c62828{% else %}#424242{% endif %};">{{ sec_rating }}</div>
+                                        {% if result.ratings.security.get('passed') %}
+                                            <div style="font-size: 0.9em; color: #6c757d;">{{ result.ratings.security.passed }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                {% if result.ratings.get('tls') %}
+                                    {% set tls_rating = result.ratings.tls.get('rating', 'N/A') %}
+                                    <div style="background: {% if tls_rating == 'A' %}#e8f5e9{% elif tls_rating == 'B' %}#fff3cd{% elif tls_rating == 'C' %}#ffe0e0{% else %}#f5f5f5{% endif %}; padding: 15px; border-radius: 5px; border: 2px solid {% if tls_rating == 'A' %}#4caf50{% elif tls_rating == 'B' %}#ffc107{% elif tls_rating == 'C' %}#dc3545{% else %}#6c757d{% endif %};">
+                                        <strong>TLS</strong>
+                                        <div style="font-size: 2em; font-weight: bold; color: {% if tls_rating == 'A' %}#2e7d32{% elif tls_rating == 'B' %}#856404{% elif tls_rating == 'C' %}#c62828{% else %}#424242{% endif %};">{{ tls_rating }}</div>
+                                        {% if result.ratings.tls.get('passed') %}
+                                            <div style="font-size: 0.9em; color: #6c757d;">{{ result.ratings.tls.passed }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {# Software Detection #}
+                    {% if result.get('software') and result.software.get('cms') %}
+                        <div style="margin-bottom: 20px;">
+                            <h5>Software Detected</h5>
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                {% for cms in result.software.cms %}
+                                    <div style="background: #e8f4f8; padding: 10px 15px; border-radius: 5px; border: 2px solid #3498db;">
+                                        <strong>{{ cms.get('name', 'Unknown') }}</strong>
+                                        {% if cms.get('info_url') %}
+                                            <div style="font-size: 0.85em; margin-top: 5px;">
+                                                <a href="{{ cms.info_url }}" target="_blank">{{ cms.info_url }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {# TLS Info #}
+                    {% if result.get('tls_info') %}
+                        <div style="margin-bottom: 20px;">
+                            <h5>TLS Certificate Information</h5>
+                            <table class="data-table">
+                                <tbody>
+                                    {% if result.tls_info.get('cert_issuer') %}
+                                        <tr>
+                                            <td><strong>Certificate Issuer:</strong></td>
+                                            <td>{{ result.tls_info.cert_issuer }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if result.tls_info.get('cert_expires') %}
+                                        <tr>
+                                            <td><strong>Certificate Expires:</strong></td>
+                                            <td>{{ result.tls_info.cert_expires }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if result.tls_info.get('cert_authority') %}
+                                        <tr>
+                                            <td><strong>Certificate Authority:</strong></td>
+                                            <td>{{ result.tls_info.cert_authority }}</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                    
+                    {# Recommendations #}
+                    {% if result.get('recommendations') %}
+                        <div style="margin-bottom: 20px;">
+                            <h5>Recommendations</h5>
+                            {% if result.recommendations.get('headers_minor') %}
+                                {% if result.recommendations.headers_minor.get('csp') %}
+                                    <div style="background: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107; margin-bottom: 10px;">
+                                        <strong>Content-Security-Policy:</strong> {{ result.recommendations.headers_minor.csp.get('details', 'Recommended') }}
+                                    </div>
+                                {% endif %}
+                                {% if result.recommendations.headers_minor.get('no_csp') %}
+                                    <div style="background: #ffe0e0; padding: 10px; border-radius: 5px; border-left: 4px solid #dc3545; margin-bottom: 10px;">
+                                        <strong>⚠️ No Content-Security-Policy header found</strong>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            {% if result.recommendations.get('security_minor') %}
+                                {% if result.recommendations.security_minor.get('needs_waf') %}
+                                    <div style="background: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107; margin-bottom: 10px;">
+                                        <strong>WAF Recommendation:</strong> Consider implementing a Web Application Firewall (WAF)
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            {% if result.recommendations.get('tls_minor') %}
+                                {% if result.recommendations.tls_minor.get('no_stapled_ocsp') %}
+                                    <div style="background: #e8f4f8; padding: 10px; border-radius: 5px; border-left: 4px solid #3498db; margin-bottom: 10px;">
+                                        <strong>OCSP Stapling:</strong> Consider enabling OCSP stapling for better performance
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Security Headers - Parsed Display #}
+            {% if key == 'securityheaders' %}
+                <div class="data-section">
+                    <h4>Security Headers Analysis</h4>
+                    {% if result.get('grade') %}
+                        <div style="margin-bottom: 15px;">
+                            <h5>Security Grade: 
+                                {% set grade = result.grade %}
+                                {% if grade == 'A' or grade == 'A+' %}
+                                    <span style="color: #28a745; font-size: 1.5em; font-weight: bold;">{{ grade }}</span>
+                                {% elif grade == 'B' %}
+                                    <span style="color: #ffc107; font-size: 1.5em; font-weight: bold;">{{ grade }}</span>
+                                {% elif grade == 'C' %}
+                                    <span style="color: #ff9800; font-size: 1.5em; font-weight: bold;">{{ grade }}</span>
+                                {% else %}
+                                    <span style="color: #dc3545; font-size: 1.5em; font-weight: bold;">{{ grade }}</span>
+                                {% endif %}
+                            </h5>
+                        </div>
+                    {% endif %}
+                    
+                    {% if result.get('headers_present') or result.get('headers_missing') %}
+                        <table class="data-table" style="margin-top: 15px;">
+                            <thead>
+                                <tr>
+                                    <th>Header</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if result.get('headers_present') %}
+                                    {% for header in result.headers_present %}
+                                        <tr>
+                                            <td><code>{{ header }}</code></td>
+                                            <td><span style="color: #28a745;">✓ Present</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                                {% if result.get('headers_missing') %}
+                                    {% for header in result.headers_missing %}
+                                        <tr>
+                                            <td><code>{{ header }}</code></td>
+                                            <td><span style="color: #dc3545;">✗ Missing</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p><em>Security headers scan completed. View screenshot for detailed results.</em></p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Check-Host - Detailed Display #}
+            {% if key == 'checkhost' %}
+                <div class="data-section">
+                    <h4>Check-Host Test Results</h4>
+                    {% if result.data and result.data.get('nodes') %}
+                        <div style="margin-bottom: 15px;">
+                            <p><strong>Nodes Available:</strong> {{ result.data.nodes | length }} locations worldwide</p>
+                            {% if result.data.get('permanent_link') %}
+                            <p><strong>Permanent Link:</strong> <a href="{{ result.data.permanent_link }}" target="_blank">{{ result.data.permanent_link }}</a></p>
+                            {% endif %}
+                            {% if result.data.get('request_id') %}
+                            <p><strong>Request ID:</strong> <code>{{ result.data.request_id }}</code></p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if result.data.nodes %}
+                            <details style="margin-top: 10px;">
+                                <summary style="cursor: pointer; font-weight: bold;">View All Nodes ({{ result.data.nodes | length }})</summary>
+                                <div style="margin-top: 10px;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Node</th>
+                                                <th>Country</th>
+                                                <th>City</th>
+                                                <th>IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for node_name, node_info in result.data.nodes.items() %}
+                                            <tr>
+                                                <td><code>{{ node_name }}</code></td>
+                                                <td>{{ node_info[1] if node_info|length > 1 else 'N/A' }}</td>
+                                                <td>{{ node_info[2] if node_info|length > 2 else 'N/A' }}</td>
+                                                <td><code>{{ node_info[3] if node_info|length > 3 else 'N/A' }}</code></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
+                        {% endif %}
+                    {% endif %}
+                    <p style="margin-top: 15px;"><strong>Check-Host Results:</strong> View screenshot below for detailed test results from all {{ result.data.nodes | length if result.data and result.data.get('nodes') else 'N/A' }} nodes worldwide.</p>
+                </div>
+            {% endif %}
+
+
+            {# SSL - Detailed Certificate Information #}
+            {% if key == 'ssl' %}
+                <div class="data-section">
+                    <h4>SSL/TLS Certificate Information</h4>
+                    {% if result.data %}
+                        {% set ssl_data = result.data %}
+                        <table class="data-table" style="margin-top: 15px;">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ssl_data.get('subject', {}).get('commonName') %}
+                                <tr>
+                                    <td><strong>Subject (CN)</strong></td>
+                                    <td><code>{{ ssl_data.subject.commonName }}</code></td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('issuer', {}).get('organizationName') %}
+                                <tr>
+                                    <td><strong>Issuer</strong></td>
+                                    <td><code>{{ ssl_data.issuer.organizationName }}</code></td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('notBefore') %}
+                                <tr>
+                                    <td><strong>Valid From</strong></td>
+                                    <td>{{ ssl_data.notBefore }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('notAfter') %}
+                                <tr>
+                                    <td><strong>Valid To</strong></td>
+                                    <td>{{ ssl_data.notAfter }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('days_until_expiry') is not none %}
+                                <tr>
+                                    <td><strong>Days Until Expiry</strong></td>
+                                    <td>
+                                        {% if ssl_data.days_until_expiry > 30 %}
+                                            <span style="color: #28a745;">{{ ssl_data.days_until_expiry }} days</span>
+                                        {% elif ssl_data.days_until_expiry > 0 %}
+                                            <span style="color: #ff9800;">⚠️ {{ ssl_data.days_until_expiry }} days (expiring soon!)</span>
+                                        {% else %}
+                                            <span style="color: #dc3545;">❌ EXPIRED</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('tls_version') %}
+                                <tr>
+                                    <td><strong>TLS Version</strong></td>
+                                    <td><code>{{ ssl_data.tls_version }}</code></td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('cipher_suite', {}).get('name') %}
+                                <tr>
+                                    <td><strong>Cipher Suite</strong></td>
+                                    <td><code>{{ ssl_data.cipher_suite.name }}</code></td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('cipher_suite', {}).get('bits') %}
+                                <tr>
+                                    <td><strong>Cipher Strength</strong></td>
+                                    <td>{{ ssl_data.cipher_suite.bits }} bits</td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('warning') %}
+                                <tr>
+                                    <td><strong>⚠️ Warning</strong></td>
+                                    <td><span style="color: #dc3545;">{{ ssl_data.warning }}</span></td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                        
+                        {% if ssl_data.get('san') %}
+                        <div style="margin-top: 15px;">
+                            <h5>Subject Alternative Names (SAN):</h5>
+                            <ul style="margin: 5px 0;">
+                                {% for name_type, name_value in ssl_data.san[:10] %}
+                                <li><code>{{ name_value }}</code></li>
+                                {% endfor %}
+                                {% if ssl_data.san|length > 10 %}
+                                <li><em>... and {{ ssl_data.san|length - 10 }} more</em></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% elif result.stdout %}
+                        <div class="json-data" style="margin-top: 10px;">
+                            <pre>{{ result.stdout }}</pre>
+                        </div>
+                    {% else %}
+                        <p><em>SSL check completed.</em></p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Error Messages #}
+            {% if result.stderr %}
+                <details>
+                    <summary>⚠️ View Errors/Warnings</summary>
+                    <div class="json-data">
+                        <pre>{{ result.stderr }}</pre>
+                    </div>
+                </details>
+            {% endif %}
+
+            {# Raw Output (Only if needed) #}
+            {% if result.stdout and result.stdout|length > 500 %}
+                <details>
+                    <summary>📄 View Raw Output ({{ result.stdout|length }} chars)</summary>
+                    <div class="json-data">
+                        <pre>{{ result.stdout[:10000] }}{% if result.stdout|length > 10000 %}... (truncated, {{ result.stdout|length - 10000 }} more chars){% endif %}</pre>
+                    </div>
+                </details>
+            {% elif result.data and (result.data is not mapping or result.data.keys() | length > 10) %}
+                <details>
+                    <summary>📄 View Raw Data</summary>
+                    <div class="json-data">
+                        <pre>{{ result.data | tojson(indent=2) if result.data is mapping else result.data }}</pre>
+                    </div>
+                </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #ddd; color: #7f8c8d; text-align: center;">
+            <p>Generated by PT Automation Orchestrator</p>
+            <p><small>Report generated at {{ finished }}</small></p>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // LIGHTBOX FUNCTIONS - DEFINED FIRST
+        // ============================================
+        // Define openLightbox and closeLightbox functions FIRST, before anything else
+        // This ensures they are available when onclick handlers are called
+        function openLightbox(imageSrc, title) {
+            const modal = document.getElementById('lightboxModal');
+            const modalImg = document.getElementById('lightboxImg');
+            const modalTitle = document.getElementById('lightboxTitle');
+            
+            if (modal && modalImg && modalTitle) {
+                modal.style.display = 'block';
+                modalImg.src = imageSrc;
+                modalImg.onerror = function() {
+                    console.error('Failed to load image:', imageSrc);
+                    if (modalTitle) {
+                        modalTitle.textContent = 'Error loading image';
+                    }
+                };
+                if (modalTitle) {
+                    modalTitle.textContent = title || 'Screenshot';
+                }
+                // Prevent body scroll when modal is open
+                document.body.style.overflow = 'hidden';
+            } else {
+                console.error('Lightbox elements not found:', {modal: !!modal, modalImg: !!modalImg, modalTitle: !!modalTitle});
+            }
+        }
+        
+        function closeLightbox() {
+            const modal = document.getElementById('lightboxModal');
+            if (modal) {
+                modal.style.display = 'none';
+                // Restore body scroll
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // Make functions globally accessible IMMEDIATELY
+        window.openLightbox = openLightbox;
+        window.closeLightbox = closeLightbox;
+        
+        // ============================================
+        // OTHER FUNCTIONALITY
+        // ============================================
+        // Wayback URL Search Functionality
+        const waybackSearch = document.getElementById('waybackSearch');
+        const waybackUrlList = document.getElementById('waybackUrlList');
+        
+        if (waybackSearch && waybackUrlList) {
+            waybackSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const items = waybackUrlList.getElementsByClassName('wayback-url-item');
+                
+                for (let item of items) {
+                    const url = item.textContent.toLowerCase();
+                    if (url.includes(searchTerm)) {
+                        item.style.display = 'list-item';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // JavaScript Endpoints Search Functionality
+        const jsEndpointsSearch = document.getElementById('jsEndpointsSearch');
+        const jsEndpointsList = document.getElementById('jsEndpointsList');
+        
+        if (jsEndpointsSearch && jsEndpointsList) {
+            jsEndpointsSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const items = jsEndpointsList.getElementsByClassName('js-endpoint-item');
+                
+                for (let item of items) {
+                    const endpoint = item.textContent.toLowerCase();
+                    if (endpoint.includes(searchTerm)) {
+                        item.style.display = 'list-item';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Lightbox functionality
+        // Support both onclick (inline) and event listeners (for backward compatibility)
+        function initLightbox() {
+            const thumbnails = document.querySelectorAll('.screenshot-thumbnail:not([onclick])');
+            thumbnails.forEach(function(thumbnail) {
+                thumbnail.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const imageSrc = this.getAttribute('data-src') || this.src;
+                    const title = this.getAttribute('data-title') || this.alt || 'Screenshot';
+                    openLightbox(imageSrc, title);
+                });
+            });
+        }
+        
+        // Initialize on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLightbox);
+        } else {
+            initLightbox();
+        }
+        
+        // Close lightbox on click outside image
+        window.onclick = function(event) {
+            const modal = document.getElementById('lightboxModal');
+            if (event.target == modal) {
+                closeLightbox();
+            }
+        }
+        
+        // Close lightbox on ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+    </script>
+    
+    <!-- Lightbox Modal -->
+    <div id="lightboxModal" class="lightbox-modal" style="display: none;">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <div class="lightbox-modal-content">
+            <h3 id="lightboxTitle" style="color: white; margin-bottom: 15px;"></h3>
+            <img id="lightboxImg" src="" alt="Full size screenshot" style="max-width: 90vw; max-height: 90vh;">
+        </div>
+    </div>
+    
+</body>
+</html>
