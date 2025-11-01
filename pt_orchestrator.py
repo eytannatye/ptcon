@@ -96,8 +96,12 @@ def run_cmd(cmd, timeout=DEFAULT_TIMEOUT, task_name="unknown"):
                 logger.warning(f"[{task_name}] Command took {elapsed:.1f}s (close to timeout of {timeout}s)")
             
             if process.returncode != 0:
-                logger.error(f"[{task_name}] Command failed with return code {process.returncode}")
-                logger.error(f"[{task_name}] STDERR: {stderr[:500]}")
+                # For JS_ENDPOINTS_CHECK (LinkFinder check), don't log as ERROR - it's non-critical
+                if task_name == "JS_ENDPOINTS_CHECK":
+                    logger.debug(f"[{task_name}] LinkFinder not found (return code {process.returncode}) - using regex fallback")
+                else:
+                    logger.error(f"[{task_name}] Command failed with return code {process.returncode}")
+                    logger.error(f"[{task_name}] STDERR: {stderr[:500]}")
             else:
                 logger.info(f"[{task_name}] Command completed successfully in {elapsed:.1f}s")
             
@@ -907,17 +911,39 @@ def task_subdomains(domain):
                         if resp.status_code < 500:  # Not a server error
                             live_subdomains.append(subdomain_info)
                             
-                            # Try to extract title
+                            # Try to extract title - with better error handling and fallbacks
                             try:
                                 from bs4 import BeautifulSoup
-                                soup = BeautifulSoup(resp.text[:50000], 'html.parser')  # Limit to first 50KB
+                                # Get more content for better title extraction
+                                content = resp.text[:100000]  # Increased to 100KB
+                                soup = BeautifulSoup(content, 'html.parser')
                                 title_tag = soup.find('title')
                                 if title_tag and title_tag.text:
-                                    subdomain_info["title"] = title_tag.text.strip()[:100]
+                                    title_text = title_tag.text.strip()
+                                    # Clean up title (remove extra whitespace, newlines)
+                                    title_text = ' '.join(title_text.split())
+                                    subdomain_info["title"] = title_text[:100] if title_text else None
+                                    logger.debug(f"[SUBDOMAINS] Found title for {sub}: {title_text[:50]}")
                                 else:
-                                    subdomain_info["title"] = None
-                            except Exception:
+                                    # Try alternative: meta title, og:title, or h1
+                                    meta_title = soup.find('meta', property='og:title')
+                                    if meta_title and meta_title.get('content'):
+                                        title_text = meta_title.get('content').strip()
+                                        subdomain_info["title"] = ' '.join(title_text.split())[:100]
+                                        logger.debug(f"[SUBDOMAINS] Found og:title for {sub}: {title_text[:50]}")
+                                    else:
+                                        # Try h1 as last resort
+                                        h1_tag = soup.find('h1')
+                                        if h1_tag and h1_tag.text:
+                                            title_text = h1_tag.text.strip()
+                                            subdomain_info["title"] = ' '.join(title_text.split())[:100]
+                                            logger.debug(f"[SUBDOMAINS] Found h1 for {sub}: {title_text[:50]}")
+                                        else:
+                                            subdomain_info["title"] = None
+                                            logger.debug(f"[SUBDOMAINS] No title found for {sub}")
+                            except Exception as e:
                                 subdomain_info["title"] = None
+                                logger.debug(f"[SUBDOMAINS] Title extraction failed for {sub}: {str(e)[:50]}")
                             
                             logger.debug(f"[SUBDOMAINS] ✓ {sub} is live ({protocol}, status: {resp.status_code})")
                             break
@@ -1104,6 +1130,7 @@ def task_screenshot(domain):
 
         screenshot_path = OUTDIR / "screenshots" / f"{domain}.png"
         result = {"cmd": "playwright screenshot", "rc": 0, "stdout": "", "stderr": ""}
+        detected_error = None  # Initialize error detection variable
 
         with sync_playwright() as p:
             logger.info(f"[SCREENSHOT] Launching stealth browser...")
@@ -1131,11 +1158,40 @@ def task_screenshot(domain):
                     
                     # Check if page has content - if body is empty, wait more
                     body_content = page.evaluate("() => document.body ? document.body.innerText.length : 0")
+                    
+                    # Get page text to detect errors (403, 404, etc.)
+                    page_text = page.evaluate("() => document.body ? document.body.innerText : ''")[:200]
+                    page_title = page.evaluate("() => document.title || ''")
+                    
+                    # Detect common errors
+                    if '403' in page_text or 'Forbidden' in page_text or '403 Forbidden' in page_title:
+                        detected_error = "403 Forbidden"
+                    elif '404' in page_text or 'Not Found' in page_text or '404' in page_title:
+                        detected_error = "404 Not Found"
+                    elif '500' in page_text or 'Internal Server Error' in page_text:
+                        detected_error = "500 Internal Server Error"
+                    elif body_content < 50:  # Very minimal content
+                        detected_error = "Minimal content or empty page"
+                    
                     if body_content < 100:
                         logger.warning(f"[SCREENSHOT] Page content seems minimal ({body_content} chars), waiting more...")
                         page.wait_for_timeout(5000)
                         body_content = page.evaluate("() => document.body ? document.body.innerText.length : 0")
+                        page_text = page.evaluate("() => document.body ? document.body.innerText : ''")[:200]
+                        page_title = page.evaluate("() => document.title || ''")
                         logger.info(f"[SCREENSHOT] After additional wait: {body_content} chars")
+                        
+                        # Re-check for errors after waiting
+                        if not detected_error:
+                            if '403' in page_text or 'Forbidden' in page_text or '403 Forbidden' in page_title:
+                                detected_error = "403 Forbidden"
+                            elif '404' in page_text or 'Not Found' in page_text or '404' in page_title:
+                                detected_error = "404 Not Found"
+                            elif '500' in page_text or 'Internal Server Error' in page_text:
+                                detected_error = "500 Internal Server Error"
+                    
+                    if detected_error:
+                        logger.warning(f"[SCREENSHOT] Detected potential error: {detected_error}")
                     
                     logger.info(f"[SCREENSHOT] ✓ HTTPS page loaded ({body_content} chars of content)")
                 except Exception as e:
@@ -1149,20 +1205,62 @@ def task_screenshot(domain):
                         page.wait_for_load_state("load", timeout=5000)
                     
                     body_content = page.evaluate("() => document.body ? document.body.innerText.length : 0")
+                    
+                    # Get page text to detect errors
+                    page_text = page.evaluate("() => document.body ? document.body.innerText : ''")[:200]
+                    page_title = page.evaluate("() => document.title || ''")
+                    
+                    # Detect common errors (only set if not already detected from HTTPS)
+                    if not detected_error:
+                        if '403' in page_text or 'Forbidden' in page_text or '403 Forbidden' in page_title:
+                            detected_error = "403 Forbidden"
+                        elif '404' in page_text or 'Not Found' in page_text or '404' in page_title:
+                            detected_error = "404 Not Found"
+                        elif '500' in page_text or 'Internal Server Error' in page_text:
+                            detected_error = "500 Internal Server Error"
+                        elif body_content < 50:
+                            detected_error = "Minimal content or empty page"
+                    
                     if body_content < 100:
                         page.wait_for_timeout(5000)
                         body_content = page.evaluate("() => document.body ? document.body.innerText.length : 0")
+                        page_text = page.evaluate("() => document.body ? document.body.innerText : ''")[:200]
+                        page_title = page.evaluate("() => document.title || ''")
+                        
+                        # Re-check for errors after waiting
+                        if not detected_error:
+                            if '403' in page_text or 'Forbidden' in page_text or '403 Forbidden' in page_title:
+                                detected_error = "403 Forbidden"
+                            elif '404' in page_text or 'Not Found' in page_text or '404' in page_title:
+                                detected_error = "404 Not Found"
+                            elif '500' in page_text or 'Internal Server Error' in page_text:
+                                detected_error = "500 Internal Server Error"
+                    
+                    if detected_error:
+                        logger.warning(f"[SCREENSHOT] Detected potential error: {detected_error}")
+                    
                     logger.info(f"[SCREENSHOT] ✓ HTTP page loaded ({body_content} chars of content)")
                 
                 logger.info(f"[SCREENSHOT] Taking screenshot...")
                 # Take screenshot with higher quality
                 page.screenshot(path=str(screenshot_path), full_page=False, scale='css', type='png')
                 elapsed = time.time() - start_time
-                logger.info(f"[SCREENSHOT] ✓ Screenshot saved to {screenshot_path} in {elapsed:.1f}s")
-                result["stdout"] = f"Screenshot saved to {screenshot_path}"
+                
+                # Add detected issues to result JSON
+                result["page_content_length"] = body_content
+                if detected_error:
+                    result["detected_error"] = detected_error
+                    result["page_text_sample"] = page_text[:200] if 'page_text' in locals() else ""
+                    result["page_title"] = page_title if 'page_title' in locals() else ""
+                    result["stdout"] = f"Screenshot saved. Warning: {detected_error} (content length: {body_content} chars)"
+                    logger.warning(f"[SCREENSHOT] ⚠️ Error detected in page: {detected_error}")
+                else:
+                    result["stdout"] = f"Screenshot saved to {screenshot_path}"
+                
                 # Use relative path from HTML report location
                 result["screenshot_path"] = f"screenshots/{screenshot_path.name}"
                 result["duration"] = elapsed
+                logger.info(f"[SCREENSHOT] ✓ Screenshot saved to {screenshot_path} in {elapsed:.1f}s")
             except Exception as e:
                 elapsed = time.time() - start_time
                 logger.error(f"[SCREENSHOT] ❌ Failed after {elapsed:.1f}s: {str(e)}")
@@ -1351,14 +1449,12 @@ def task_cookies(domain):
                 except:
                     page.wait_for_timeout(3000)
                 
-                # Verify page has content before screenshot
+                # Verify page has content
                 body_content = page.evaluate("() => document.body ? document.body.innerText.length : 0")
-                logger.info(f"[COOKIES] Page content: {body_content} chars before screenshot")
+                logger.info(f"[COOKIES] Page content: {body_content} chars")
                 
-                # Screenshot should show the page AFTER cookies were set and banner was accepted
-                # This gives context about what cookies were triggered
-                page.screenshot(path=str(screenshot_path), full_page=False, scale='css', type='png')
-                result["screenshot_path"] = f"screenshots/{screenshot_path.name}"
+                # No screenshot needed for cookies analysis - removed per user request
+                # (screenshot_path variable remains for cleanup, but not saved to result)
                 
                 elapsed = time.time() - start_time
                 result["duration"] = elapsed
@@ -1461,18 +1557,23 @@ def task_js_endpoints(domain):
     endpoints = []
     linkfinder_used = False
     
-    # Check if LinkFinder is available
+    # Check if LinkFinder is available (non-critical - we have regex fallback)
     linkfinder_available = False
     try:
         result_check = run_cmd("which linkfinder", timeout=5, task_name="JS_ENDPOINTS_CHECK")
         if result_check.get("rc") == 0 and result_check.get("stdout", "").strip():
             linkfinder_available = True
+            logger.info(f"[JS_ENDPOINTS] LinkFinder found: {result_check.get('stdout', '').strip()}")
         else:
             # Try linkfinder --version
             result_version = run_cmd("linkfinder --version", timeout=5, task_name="JS_ENDPOINTS_CHECK")
             if result_version.get("rc") == 0:
                 linkfinder_available = True
-    except:
+                logger.info(f"[JS_ENDPOINTS] LinkFinder available (version check passed)")
+            else:
+                logger.info(f"[JS_ENDPOINTS] LinkFinder not found, using regex fallback")
+    except Exception as e:
+        logger.debug(f"[JS_ENDPOINTS] LinkFinder check failed (non-critical): {str(e)[:50]}")
         pass
     
     try:
@@ -1929,7 +2030,10 @@ def task_securityheaders(domain):
                 # Wait a bit more for page to render
                 page.wait_for_timeout(3000)
                 page.wait_for_load_state("load", timeout=5000)
-                page.screenshot(path=str(screenshot_path), full_page=False, scale='css', type='png')  # Only viewport
+                # Scroll down to ensure full page is rendered
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(1000)
+                page.screenshot(path=str(screenshot_path), full_page=True, type='png')  # Full page screenshot
                 browser.close()
             
             # Use relative path from HTML report location
@@ -2244,44 +2348,88 @@ def task_ssl(domain):
         
         # Connect to domain and get certificate
         try:
+            # Use CERT_OPTIONAL instead of CERT_NONE to allow getpeercert() to return certificate info
+            # We still don't verify, but this allows us to get the certificate details
             context = ssl.create_default_context()
             context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE  # Don't verify, just get info
+            context.verify_mode = ssl.CERT_OPTIONAL  # Allow getting cert info without strict verification
             
             with socket.create_connection((domain, 443), timeout=10) as sock:
                 with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                    # Get certificate - CERT_OPTIONAL allows us to get certificate info
                     cert = ssock.getpeercert()
+                    # Fallback: if cert is still None, try get_server_certificate
+                    if not cert:
+                        try:
+                            cert_pem = ssl.get_server_certificate((domain, 443))
+                            logger.debug(f"[SSL] Got certificate via get_server_certificate (PEM length: {len(cert_pem)})")
+                            # Note: PEM format requires additional parsing, but we'll continue with other info
+                        except Exception as e:
+                            logger.debug(f"[SSL] Could not get certificate via get_server_certificate: {str(e)[:50]}")
+                    
                     cipher = ssock.cipher()
                     version = ssock.version()
                     
                     # Extract certificate information - handle subject/issuer properly
                     # Subject/Issuer format: [(('commonName', 'example.com'),), (('organizationName', 'Org'),), ...]
                     subject_dict = {}
-                    for item in cert.get('subject', []):
-                        if isinstance(item, tuple):
-                            # Handle nested tuples: (('key', 'value'),)
-                            for subitem in item:
+                    if cert and cert.get('subject'):
+                        subject_data = cert.get('subject')
+                        # Handle different formats: list of tuples or dict
+                        if isinstance(subject_data, list):
+                            for item in subject_data:
+                                if isinstance(item, tuple):
+                                    # Handle nested tuples: (('key', 'value'),)
+                                    for subitem in item:
+                                        if isinstance(subitem, tuple) and len(subitem) >= 2:
+                                            key = subitem[0]
+                                            value = subitem[1]
+                                            if key:
+                                                subject_dict[key] = value
+                                        elif isinstance(subitem, (str, bytes)):
+                                            subject_dict['value'] = subitem
+                                elif isinstance(item, dict):
+                                    # If it's already a dict
+                                    subject_dict.update(item)
+                        elif isinstance(subject_data, dict):
+                            subject_dict = subject_data.copy()
+                        elif isinstance(subject_data, tuple):
+                            # Handle tuple directly: (('commonName', 'example.com'),)
+                            for subitem in subject_data:
                                 if isinstance(subitem, tuple) and len(subitem) >= 2:
                                     key = subitem[0]
                                     value = subitem[1]
                                     if key:
                                         subject_dict[key] = value
-                                elif isinstance(subitem, (str, bytes)):
-                                    # Sometimes it's just a string
-                                    subject_dict['value'] = subitem
                     
                     issuer_dict = {}
-                    for item in cert.get('issuer', []):
-                        if isinstance(item, tuple):
-                            # Handle nested tuples: (('key', 'value'),)
-                            for subitem in item:
+                    if cert and cert.get('issuer'):
+                        issuer_data = cert.get('issuer')
+                        # Handle different formats: list of tuples or dict
+                        if isinstance(issuer_data, list):
+                            for item in issuer_data:
+                                if isinstance(item, tuple):
+                                    # Handle nested tuples: (('key', 'value'),)
+                                    for subitem in item:
+                                        if isinstance(subitem, tuple) and len(subitem) >= 2:
+                                            key = subitem[0]
+                                            value = subitem[1]
+                                            if key:
+                                                issuer_dict[key] = value
+                                        elif isinstance(subitem, (str, bytes)):
+                                            issuer_dict['value'] = subitem
+                                elif isinstance(item, dict):
+                                    issuer_dict.update(item)
+                        elif isinstance(issuer_data, dict):
+                            issuer_dict = issuer_data.copy()
+                        elif isinstance(issuer_data, tuple):
+                            # Handle tuple directly: (('organizationName', 'Org'),)
+                            for subitem in issuer_data:
                                 if isinstance(subitem, tuple) and len(subitem) >= 2:
                                     key = subitem[0]
                                     value = subitem[1]
                                     if key:
                                         issuer_dict[key] = value
-                                elif isinstance(subitem, (str, bytes)):
-                                    issuer_dict['value'] = subitem
                     
                     # Extract certificate information
                     ssl_info = {
@@ -2302,9 +2450,92 @@ def task_ssl(domain):
                     }
                     
                     logger.info(f"[SSL] ✓ Certificate retrieved successfully")
+                    
+                    # Test TLS version support (1.0, 1.1, 1.2, 1.3)
+                    tls_support = {}
+                    
+                    logger.info(f"[SSL] Testing TLS version support...")
+                    
+                    # Test TLS 1.0
+                    try:
+                        context_test = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+                        context_test.check_hostname = False
+                        context_test.verify_mode = ssl.CERT_NONE
+                        with socket.create_connection((domain, 443), timeout=5) as sock_test:
+                            with context_test.wrap_socket(sock_test, server_hostname=domain) as ssock_test:
+                                tls_support['TLSv1'] = True
+                                logger.debug(f"[SSL] ✓ TLSv1 supported")
+                    except (ssl.SSLError, OSError, socket.timeout, Exception) as e:
+                        tls_support['TLSv1'] = False
+                        logger.debug(f"[SSL] ✗ TLSv1 not supported: {str(e)[:50]}")
+                    
+                    # Test TLS 1.1
+                    try:
+                        tls11_protocol = getattr(ssl, 'PROTOCOL_TLSv1_1', None)
+                        if tls11_protocol:
+                            context_test = ssl.SSLContext(tls11_protocol)
+                            context_test.check_hostname = False
+                            context_test.verify_mode = ssl.CERT_NONE
+                            with socket.create_connection((domain, 443), timeout=5) as sock_test:
+                                with context_test.wrap_socket(sock_test, server_hostname=domain) as ssock_test:
+                                    tls_support['TLSv1.1'] = True
+                                    logger.debug(f"[SSL] ✓ TLSv1.1 supported")
+                        else:
+                            tls_support['TLSv1.1'] = False
+                    except (ssl.SSLError, OSError, socket.timeout, Exception) as e:
+                        tls_support['TLSv1.1'] = False
+                        logger.debug(f"[SSL] ✗ TLSv1.1 not supported: {str(e)[:50]}")
+                    
+                    # Test TLS 1.2
+                    try:
+                        context_test = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+                        context_test.check_hostname = False
+                        context_test.verify_mode = ssl.CERT_NONE
+                        with socket.create_connection((domain, 443), timeout=5) as sock_test:
+                            with context_test.wrap_socket(sock_test, server_hostname=domain) as ssock_test:
+                                tls_support['TLSv1.2'] = True
+                                logger.debug(f"[SSL] ✓ TLSv1.2 supported")
+                    except (ssl.SSLError, OSError, socket.timeout, Exception) as e:
+                        tls_support['TLSv1.2'] = False
+                        logger.debug(f"[SSL] ✗ TLSv1.2 not supported: {str(e)[:50]}")
+                    
+                    # Test TLS 1.3
+                    try:
+                        context_test = ssl.SSLContext(ssl.PROTOCOL_TLS)
+                        context_test.check_hostname = False
+                        context_test.verify_mode = ssl.CERT_NONE
+                        # Try to set minimum version to TLS 1.3 if available
+                        if hasattr(ssl, 'TLSVersion') and hasattr(ssl.TLSVersion, 'TLSv1_3'):
+                            context_test.minimum_version = ssl.TLSVersion.TLSv1_3
+                            context_test.maximum_version = ssl.TLSVersion.TLSv1_3
+                        with socket.create_connection((domain, 443), timeout=5) as sock_test:
+                            with context_test.wrap_socket(sock_test, server_hostname=domain) as ssock_test:
+                                # Check if TLS 1.3 was negotiated
+                                if hasattr(ssock_test, 'version') and 'TLSv1.3' in str(ssock_test.version()):
+                                    tls_support['TLSv1.3'] = True
+                                    logger.debug(f"[SSL] ✓ TLSv1.3 supported")
+                                else:
+                                    # Try without version restriction to see what's negotiated
+                                    context_test_v3 = ssl.SSLContext(ssl.PROTOCOL_TLS)
+                                    context_test_v3.check_hostname = False
+                                    context_test_v3.verify_mode = ssl.CERT_NONE
+                                    with socket.create_connection((domain, 443), timeout=5) as sock_test_v3:
+                                        with context_test_v3.wrap_socket(sock_test_v3, server_hostname=domain) as ssock_test_v3:
+                                            if hasattr(ssock_test_v3, 'version') and 'TLSv1.3' in str(ssock_test_v3.version()):
+                                                tls_support['TLSv1.3'] = True
+                                                logger.debug(f"[SSL] ✓ TLSv1.3 supported")
+                                            else:
+                                                tls_support['TLSv1.3'] = False
+                                                logger.debug(f"[SSL] ✗ TLSv1.3 not supported")
+                    except (ssl.SSLError, OSError, socket.timeout, Exception) as e:
+                        tls_support['TLSv1.3'] = False
+                        logger.debug(f"[SSL] ✗ TLSv1.3 not supported: {str(e)[:50]}")
+                    
+                    ssl_info["tls_support"] = tls_support
         except Exception as e:
             logger.warning(f"[SSL] Failed to get certificate: {str(e)[:100]}")
             ssl_info["error"] = str(e)[:200]
+            ssl_info["tls_support"] = {}
         
         # Check certificate expiry
         if ssl_info.get('notAfter'):
@@ -2316,21 +2547,35 @@ def task_ssl(domain):
                 ssl_info["expiry_status"] = "valid" if days_until_expiry > 0 else "expired"
                 if days_until_expiry < 30:
                     ssl_info["warning"] = f"Certificate expires in {days_until_expiry} days"
-            except:
+            except Exception as e:
                 try:
                     from datetime import datetime
-                    # Try parsing manually if dateutil not available
                     import re
                     date_str = ssl_info['notAfter']
                     # Format: "Nov  1 00:00:00 2025 GMT" or similar
                     match = re.search(r'(\w{3})\s+(\d+)\s+.*?(\d{4})', date_str)
                     if match:
                         month, day, year = match.groups()
-                        # Simple parsing (approximate)
-                        ssl_info["days_until_expiry"] = "unknown"
-                        ssl_info["expiry_status"] = "check_manually"
+                        # Try to parse manually - if fails, set to None instead of "unknown"
+                        try:
+                            from datetime import datetime as dt
+                            month_map = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                                        'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+                            month_num = month_map.get(month, 1)
+                            expiry_date_manual = dt(int(year), month_num, int(day))
+                            days_until_expiry = (expiry_date_manual - datetime.now()).days
+                            ssl_info["days_until_expiry"] = days_until_expiry
+                            ssl_info["expiry_status"] = "valid" if days_until_expiry > 0 else "expired"
+                        except:
+                            # If parsing fails, set to None (not "unknown") so template can handle it
+                            ssl_info["days_until_expiry"] = None
+                            ssl_info["expiry_status"] = "parsing_failed"
+                    else:
+                        ssl_info["days_until_expiry"] = None
+                        ssl_info["expiry_status"] = "parsing_failed"
                 except:
-                    pass
+                    ssl_info["days_until_expiry"] = None
+                    ssl_info["expiry_status"] = "parsing_failed"
         
         elapsed = time.time() - start_time
         
@@ -2355,6 +2600,13 @@ def task_ssl(domain):
             output_lines.append(f"Cipher Suite: {ssl_info['cipher_suite']['name']}")
             if ssl_info['cipher_suite'].get('bits'):
                 output_lines.append(f"Cipher Strength: {ssl_info['cipher_suite']['bits']} bits")
+        
+        # Add TLS version support information
+        if ssl_info.get('tls_support'):
+            output_lines.append(f"\nTLS Version Support:")
+            for tls_ver, supported in ssl_info['tls_support'].items():
+                status = "✓ Supported" if supported else "✗ Not Supported"
+                output_lines.append(f"  {tls_ver}: {status}")
         if ssl_info.get('san'):
             output_lines.append(f"\nSubject Alternative Names (SAN):")
             for name_type, name_value in ssl_info['san'][:5]:  # Show first 5
@@ -2623,7 +2875,9 @@ def render_html(report):
         template_content = template_path.read_text()
         from jinja2 import Environment
         env = Environment()
-        env.filters['tojson'] = lambda x: json.dumps(x, indent=2, ensure_ascii=False)
+        def tojson_filter(x, indent=2):
+            return json.dumps(x, indent=indent, ensure_ascii=False)
+        env.filters['tojson'] = tojson_filter
         env.filters['from_json'] = lambda x: json.loads(x) if isinstance(x, str) else x
         template = env.from_string(template_content)
         # Convert any dict/list data to JSON strings for better template rendering

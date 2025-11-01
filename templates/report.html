@@ -314,9 +314,10 @@
 
         {# Technology Detection #}
         {% set tech_result = results.get('tech_detection', {}) %}
-        {% if tech_result.get('technologies') %}
+        {% if tech_result and (tech_result.get('technologies') or tech_result.get('rc') == 0) %}
         <h2>🔧 Technologies Detected</h2>
         <div class="findings-summary">
+            {% if tech_result.get('technologies') and tech_result.technologies|length > 0 %}
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
                 {% for tech in tech_result.technologies %}
                 <div style="background: #e8f4f8; padding: 10px 15px; border-radius: 5px; border: 2px solid #3498db; display: inline-block;">
@@ -331,12 +332,15 @@
                 </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <p style="color: #6c757d; font-style: italic;">No technologies detected.</p>
+            {% endif %}
         </div>
         {% endif %}
 
         {# DNS / Network Layer Analysis #}
         {% set dns_result = results.get('dns', {}) %}
-        {% if dns_result.get('a_records') or dns_result.get('mx_records') or dns_result.get('txt_records') %}
+        {% if dns_result and (dns_result.get('a_records') or dns_result.get('mx_records') or dns_result.get('txt_records') or dns_result.get('rc') == 0) %}
         <h2>🌐 DNS / Network Layer Analysis</h2>
         <div class="findings-summary">
             {% if dns_result.get('a_records') %}
@@ -459,13 +463,6 @@
                 Cookie banner accepted: <strong>{{ 'Yes' if cookies_result.get('cookie_banner_accepted') else 'No' }}</strong> | 
                 Total cookies found: <strong>{{ cookies_result.cookies_count }}</strong>
             </p>
-            {% if cookies_result.get('screenshot_path') %}
-            <div class="screenshot" style="margin-bottom: 20px;">
-                <h4>Screenshot</h4>
-                <img src="{{ cookies_result.screenshot_path }}" alt="Cookies Analysis Screenshot" class="screenshot-thumbnail" onclick="openLightbox('{{ cookies_result.screenshot_path }}', 'Cookies Analysis Screenshot')" style="cursor: pointer;">
-                <p style="text-align: center; color: #7f8c8d; margin-top: 5px; font-size: 0.9em;">{{ cookies_result.screenshot_path }} (Click to enlarge)</p>
-            </div>
-            {% endif %}
             <table class="data-table" style="margin-top: 15px;">
                 <thead>
                     <tr>
@@ -657,14 +654,16 @@
         {% endif %}
         {% endif %}
 
-        {% if js_endpoints_result.get('endpoints') and js_endpoints_result.endpoint_count > 0 %}
+        {% if js_endpoints_result and (js_endpoints_result.get('endpoints') or js_endpoints_result.get('rc') == 0) %}
         <div class="findings-summary" style="margin-top: 20px;">
-            <h3>🔗 JavaScript Endpoints Discovered ({{ js_endpoints_result.endpoint_count }})</h3>
+            <h3>🔗 JavaScript Endpoints Discovered</h3>
+            {% if js_endpoints_result.get('endpoints') and js_endpoints_result.endpoint_count > 0 %}
             <p style="font-size: 0.9em; color: #6c757d; margin-bottom: 10px;">
                 Method: <strong>{{ 'LinkFinder' if js_endpoints_result.linkfinder_used else 'Regex fallback' }}</strong>
                 {% if js_endpoints_result.get('js_files_found') %}
                 | JS Files Found: {{ js_endpoints_result.js_files_found }}
                 {% endif %}
+                | Total Endpoints: <strong>{{ js_endpoints_result.endpoint_count }}</strong>
             </p>
             <div style="margin-bottom: 15px;">
                 <input type="text" id="jsEndpointsSearch" placeholder="Search endpoints..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em;">
@@ -679,6 +678,9 @@
                     {% endfor %}
                 </ul>
             </details>
+            {% else %}
+            <p style="color: #6c757d; font-style: italic;">No JavaScript endpoints found.</p>
+            {% endif %}
         </div>
         {% endif %}
 
@@ -1106,50 +1108,62 @@
                 </div>
             {% endif %}
 
-            {# Check-Host - Detailed Display #}
+            {# Check-Host - Detailed Display (Always show if checkhost task) #}
             {% if key == 'checkhost' %}
                 <div class="data-section">
-                    <h4>Check-Host Test Results</h4>
+                    <h4>🌍 Check-Host Test Results</h4>
                     {% if result.data and result.data.get('nodes') %}
-                        <div style="margin-bottom: 15px;">
-                            <p><strong>Nodes Available:</strong> {{ result.data.nodes | length }} locations worldwide</p>
-                            {% if result.data.get('permanent_link') %}
-                            <p><strong>Permanent Link:</strong> <a href="{{ result.data.permanent_link }}" target="_blank">{{ result.data.permanent_link }}</a></p>
-                            {% endif %}
-                            {% if result.data.get('request_id') %}
-                            <p><strong>Request ID:</strong> <code>{{ result.data.request_id }}</code></p>
-                            {% endif %}
-                        </div>
-                        
-                        {% if result.data.nodes %}
-                            <details style="margin-top: 10px;">
-                                <summary style="cursor: pointer; font-weight: bold;">View All Nodes ({{ result.data.nodes | length }})</summary>
-                                <div style="margin-top: 10px;">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Node</th>
-                                                <th>Country</th>
-                                                <th>City</th>
-                                                <th>IP</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for node_name, node_info in result.data.nodes.items() %}
-                                            <tr>
-                                                <td><code>{{ node_name }}</code></td>
-                                                <td>{{ node_info[1] if node_info|length > 1 else 'N/A' }}</td>
-                                                <td>{{ node_info[2] if node_info|length > 2 else 'N/A' }}</td>
-                                                <td><code>{{ node_info[3] if node_info|length > 3 else 'N/A' }}</code></td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </details>
+                    <div style="margin-bottom: 15px;">
+                        <p><strong>Nodes Available:</strong> {{ result.data.nodes | length }} locations worldwide</p>
+                        {% if result.data.get('permanent_link') %}
+                        <p><strong>Permanent Link:</strong> <a href="{{ result.data.permanent_link }}" target="_blank">{{ result.data.permanent_link }}</a></p>
                         {% endif %}
+                        {% if result.data.get('request_id') %}
+                        <p><strong>Request ID:</strong> <code>{{ result.data.request_id }}</code></p>
+                        {% endif %}
+                    </div>
+                    
+                    {% if result.data.nodes %}
+                        <details style="margin-top: 10px;">
+                            <summary style="cursor: pointer; font-weight: bold;">View All Nodes ({{ result.data.nodes | length }})</summary>
+                            <div style="margin-top: 10px;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Node</th>
+                                            <th>Country</th>
+                                            <th>City</th>
+                                            <th>IP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for node_name, node_info in result.data.nodes.items() %}
+                                        <tr>
+                                            <td><code>{{ node_name }}</code></td>
+                                            <td>{{ node_info[1] if node_info|length > 1 else 'N/A' }}</td>
+                                            <td>{{ node_info[2] if node_info|length > 2 else 'N/A' }}</td>
+                                            <td><code>{{ node_info[3] if node_info|length > 3 else 'N/A' }}</code></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </details>
                     {% endif %}
-                    <p style="margin-top: 15px;"><strong>Check-Host Results:</strong> View screenshot below for detailed test results from all {{ result.data.nodes | length if result.data and result.data.get('nodes') else 'N/A' }} nodes worldwide.</p>
+                    {% endif %}
+                    
+                    {# Always show screenshot if available #}
+                    {% if result.screenshot_path %}
+                    <div class="screenshot" style="margin-top: 15px;">
+                        <h4>Check-Host Test Results Screenshot</h4>
+                        <img src="{{ result.screenshot_path }}" alt="Check-Host Test Results" class="screenshot-thumbnail" onclick="openLightbox('{{ result.screenshot_path }}', 'Check-Host Test Results')" style="cursor: pointer;">
+                        <p style="text-align: center; color: #7f8c8d; margin-top: 5px; font-size: 0.9em;">{{ result.screenshot_path }} (Click to enlarge)</p>
+                    </div>
+                    {% elif result.data %}
+                    <p style="margin-top: 15px; color: #6c757d;"><strong>Check-Host Results:</strong> Screenshot processing...</p>
+                    {% else %}
+                    <p style="margin-top: 15px; color: #6c757d;"><strong>Check-Host Results:</strong> Test completed. Results available via permanent link above.</p>
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -1196,12 +1210,17 @@
                                 <tr>
                                     <td><strong>Days Until Expiry</strong></td>
                                     <td>
-                                        {% if ssl_data.days_until_expiry > 30 %}
-                                            <span style="color: #28a745;">{{ ssl_data.days_until_expiry }} days</span>
-                                        {% elif ssl_data.days_until_expiry > 0 %}
-                                            <span style="color: #ff9800;">⚠️ {{ ssl_data.days_until_expiry }} days (expiring soon!)</span>
+                                        {% set days = ssl_data.days_until_expiry %}
+                                        {% if days is number %}
+                                            {% if days > 30 %}
+                                                <span style="color: #28a745;">{{ days }} days</span>
+                                            {% elif days > 0 %}
+                                                <span style="color: #ff9800;">⚠️ {{ days }} days (expiring soon!)</span>
+                                            {% else %}
+                                                <span style="color: #dc3545;">❌ EXPIRED</span>
+                                            {% endif %}
                                         {% else %}
-                                            <span style="color: #dc3545;">❌ EXPIRED</span>
+                                            <span style="color: #6c757d;">{{ days }}</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -1222,6 +1241,25 @@
                                 <tr>
                                     <td><strong>Cipher Strength</strong></td>
                                     <td>{{ ssl_data.cipher_suite.bits }} bits</td>
+                                </tr>
+                                {% endif %}
+                                {% if ssl_data.get('tls_support') %}
+                                <tr>
+                                    <td><strong>TLS Version Support</strong></td>
+                                    <td>
+                                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 5px;">
+                                            {% for tls_ver, supported in ssl_data.tls_support.items() %}
+                                            <div style="background: {% if supported %}#e8f5e9{% else %}#ffebee{% endif %}; padding: 8px; border-radius: 3px; border: 1px solid {% if supported %}#4caf50{% else %}#f44336{% endif %};">
+                                                <strong>{{ tls_ver }}:</strong>
+                                                {% if supported %}
+                                                    <span style="color: #2e7d32;">✓ Supported</span>
+                                                {% else %}
+                                                    <span style="color: #c62828;">✗ Not Supported</span>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endif %}
                                 {% if ssl_data.get('warning') %}
@@ -1274,7 +1312,8 @@
                         <pre>{{ result.stdout[:10000] }}{% if result.stdout|length > 10000 %}... (truncated, {{ result.stdout|length - 10000 }} more chars){% endif %}</pre>
                     </div>
                 </details>
-            {% elif result.data and (result.data is not mapping or result.data.keys() | length > 10) %}
+            {% elif result.data and (result.data is not mapping or result.data.keys() | length > 10) and key != 'checkhost' %}
+                {# Don't show raw JSON data for checkhost - it's already displayed in detail above #}
                 <details>
                     <summary>📄 View Raw Data</summary>
                     <div class="json-data">
